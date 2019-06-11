@@ -3,9 +3,9 @@ from time import time
 import numpy as np
 # also import other algorithm files
 
-stage1 = [lambda x: x] # list of references to stage 1 algorithms
-stage2 = [lambda x: x] # stage 2 algorithms
-stage3 = [lambda x: 0] # stage 3 if more than 1
+stage1 = [] # list of references to stage 1 algorithms
+stage2 = [] # stage 2 algorithms
+stage3 = [] # stage 3 if more than 1
 
 # stage 1 and 2 algorithms will need to return a reference to the points they operate on
 # stage 3 algorithms must return some measure of error
@@ -27,12 +27,11 @@ def calculate_objectives(pop, fn_count):
 			runtime += (time() - start)
 										# objectives are average function runtime and error
 										# future: consider making error a list and checking std dev
-		p["objectives"] = [runtime/fn_count, errorsum/fn_count]
-		print("eee")
+		p["objectives"] = [1,1]#[runtime/fn_count, errorsum/fn_count]
 
 def decode(bitstring):
 
-	s1, s2, s3 = np.log2(len(stage1)), np.log2(len(stage2)), np.log2(len(stage3))
+	s1, s2, s3 = int(np.log2(len(stage1))), int(np.log2(len(stage2))), int(np.log2(len(stage3)))
 	i1 = 0 if s1 == 0 else int(bitstring[0:s1], 2)
 	i2 = 0 if s1 == 0 else int(bitstring[s1:s1+s2], 2)
 	i3 = 0 if s1 == 0 else int(bitstring[s1+s2:s1+s2+s3], 2)
@@ -144,15 +143,16 @@ def select_parents(fronts, pop_size):
 		offspring += fronts[last_front][0:remaining]
 	return offspring
 
-def search(fn_evals, max_gens, pop_size, p_cross, bits_per_param = 16):
+def search(fn_evals, max_gens, pop_size, p_cross):
 	fnbits = int(np.log2(len(stage1)) + np.log2(len(stage2)) + np.log2(len(stage3)))	# calculate total bits used for picking fn
-
 	pop = [{"bitstring":random_bitstring(fnbits)} for i in range(pop_size)]
+	print(pop)
 	calculate_objectives(pop, fn_evals)
 	fast_nondominated_sort(pop)
 	selected = [better(pop[randrange(pop_size)], pop[randrange(pop_size)]) for i in range(pop_size)]
 	children = reproduce(selected, pop_size, p_cross)
-	calculate_objectives(pop, fn_evals)
+
+	calculate_objectives(children, fn_evals)
 	for gen in range(max_gens):
 		union = pop + children
 		fronts = fast_nondominated_sort(union)
@@ -160,11 +160,10 @@ def search(fn_evals, max_gens, pop_size, p_cross, bits_per_param = 16):
 		selected = [better(parents[randrange(pop_size)], parents[randrange(pop_size)]) for i in range(pop_size)]
 		pop = children
 		children = reproduce(selected, pop_size, p_cross)
-		calculate_objectives(pop, fn_evals)
+		calculate_objectives(children, fn_evals)
 		best = min(parents, key = weighted_sum)
-		best_s = "[x={}, objs={}]".format(best["vector"], best["objectives"])
 
-		print(" > gen = {}, fronts = {}, best = {}".format(gen+1, len(fronts), best_s))
+		print(" > gen = {}, fronts = {}".format(gen+1, len(fronts)))
 
 	union = pop + children
 	fronts = fast_nondominated_sort(union)

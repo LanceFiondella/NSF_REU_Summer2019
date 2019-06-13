@@ -1,19 +1,54 @@
-from random import randrange, random
-from time import time
-import numpy as np
-# also import other algorithm files
 
-stage1 = [] # list of references to stage 1 algorithms
-stage2 = [] # stage 2 algorithms
-stage3 = [] # stage 3 if more than 1
+import sys, os 				# import all algorithms in sub-directory
+for directory in os.listdir("algorithms"):
+	sys.path.insert(0, f"algorithms/{directory}")
+import firefly, pso
 
-# stage 1 and 2 algorithms will need to return a reference to the points they operate on
-# stage 3 algorithms must return some measure of error
-# needs at least 1 for each
+#---- NSGA SETTINGS ------------------------------
 
-def weighted_sum(x):	# function that outright chooses a "best" candidate
-						# by default minimizes sum of error & runtime, change to value one over other
+nsga_max_gens = 50			# number of generations in NSGA-II
+nsga_pop_size = 100 		# how many combinations there are
+nsga_p_cross = 0.98			# mutation crossover probability
+nsga_fn_evals = 25 			# how many evaluations to average
+
+stage1 = [firefly.search, pso.search]	# s1 algos; return a list of vectors
+stage2 = [lambda x: x, lambda x: x]		# s2 algos; return a list of vectors
+stage3 = [lambda x: 0, lambda x: 0]		# s3 algos; return a margin of error
+
+
+def weighted_sum(x):					# function that outright chooses a "best" candidate
 	return sum(x["objectives"])
+
+
+def objective(vector):					# minimized objective function
+	return sum([(x-0.45)**2 for x in vector])
+
+#---------------begin NSGA-II---------------------
+
+import numpy as np
+import time
+
+
+def decode(bitstring):
+
+	search_space = [[0, 1] for x in range(1)]	# 3 dimensional co-variate search space
+	pcount = 25
+	generations = 25
+
+	pop = [[ np.random.uniform(y[0],y[1]) for y in search_space] for x in range(pcount)]
+
+	params = (objective, search_space, generations, pop)
+
+	s1, s2, s3 = int(np.log2(len(stage1))), int(np.log2(len(stage2))), int(np.log2(len(stage3)))
+	print(bitstring)
+	i1 = 0 if s1 == 0 else int(bitstring[0:s1], 2)
+	i2 = 0 if s1 == 0 else int(bitstring[s1:s1+s2], 2)
+	i3 = 0 if s1 == 0 else int(bitstring[s1+s2:s1+s2+s3], 2)
+
+			# this returns a function that evals s1, hands it to s2, then s3, which returns margin of error
+			# which is an objective alongside the amount of time it took
+	return (lambda x: stage3[i3]( stage2[i2]( stage1[i1]( *x ) ) )), params
+
 
 def calculate_objectives(pop, fn_count):
 	for p in pop:                       # find fitness of each member of a population in order to find pareto-fitness
@@ -21,27 +56,17 @@ def calculate_objectives(pop, fn_count):
 		runtime = 0
 		errorsum = 0
 		for i in range(fn_count):
-			start = time()
-
+			stime = time.time()
 			errorsum += fn(params)
-			runtime += (time() - start)
-										# objectives are average function runtime and error
-										# future: consider making error a list and checking std dev
-		p["objectives"] = [1,1]#[runtime/fn_count, errorsum/fn_count]
+			runtime += time.time() - stime
+											# objectives are average function runtime and error
+											# future: consider making error a list and checking std dev
+			p["objectives"] = [runtime/fn_count, errorsum/fn_count]
 
-def decode(bitstring):
-
-	s1, s2, s3 = int(np.log2(len(stage1))), int(np.log2(len(stage2))), int(np.log2(len(stage3)))
-	i1 = 0 if s1 == 0 else int(bitstring[0:s1], 2)
-	i2 = 0 if s1 == 0 else int(bitstring[s1:s1+s2], 2)
-	i3 = 0 if s1 == 0 else int(bitstring[s1+s2:s1+s2+s3], 2)
-
-			# future: change none to a decoded list of parameters based on bitstring
-			# this returns a function that evals s3 on s2's results, s2's results are based on s1's
-	return (lambda x: stage3[i3]( stage2[i2]( stage1[i1]( x ) ) )), None
 
 def random_bitstring(num_bits):       	# generate some n-length string of random bits
-	return str(bin(randrange(2**num_bits)))[2:].zfill(num_bits)
+	return str(bin(np.random.randint(2**num_bits)))[2:].zfill(num_bits)
+
 
 def point_mutation(bitstring, rate=None):
 	if rate == None:                    # basic genetic mutation, common to all gen methods
@@ -49,16 +74,18 @@ def point_mutation(bitstring, rate=None):
 	child = ""
 	for i in range(len(bitstring)):
 		bit = bitstring[i]
-		child += str(1-int(bit)) if (random()<rate) else bit
+		child += str(1-int(bit)) if (np.random.random_sample()<rate) else bit
 	return child
 
+
 def crossover(parent1, parent2, rate):
-	if random() >= rate:                # basic crossover common to all gen methods
+	if np.random.random_sample() >= rate:                # basic crossover common to all gen methods
 		return ""+parent1
 	child = ""
 	for i in range(len(parent1)):
-		child += parent1[i] if random() < 0.5 else parent2[i]
+		child += parent1[i] if np.random.random_sample() < 0.5 else parent2[i]
 	return child
+
 
 def reproduce(selected, pop_size, p_cross):
 	children = []                       # generate new children population based off of parent population
@@ -74,11 +101,13 @@ def reproduce(selected, pop_size, p_cross):
 			break
 	return children
 
+
 def dominates(p1, p2):                # used to find whether one population is more dominant
 	for i in range(len(p1["objectives"])):
 		if p1["objectives"][i] > p2["objectives"][i]:
 			return False
 	return True
+
 
 def fast_nondominated_sort(pop):
 	fronts = [[]]                       # generate a list of fronts for the next population
@@ -108,6 +137,7 @@ def fast_nondominated_sort(pop):
 			break
 	return fronts
 
+
 def calculate_crowding_distance(pop):
 	for p in pop:                       # use crowding distance to preserve diverse options
 		p["dist"] = 0
@@ -122,10 +152,12 @@ def calculate_crowding_distance(pop):
 		for j in range(1, len(pop)-1):
 			pop[j]["dist"] += (pop[j+1]["objectives"][i] - pop[j-1]["objectives"][i]) / rge
 
+
 def better(x, y):                     # pick by rank then by crowding distance
 	if ("dist" in x.keys()) and (x["rank"] == y["rank"]):
 		return x if (x["dist"] > y["dist"]) else y
 	return x if (x["rank"] < y["rank"]) else y
+
 
 def select_parents(fronts, pop_size):
 	for f in fronts:
@@ -143,24 +175,33 @@ def select_parents(fronts, pop_size):
 		offspring += fronts[last_front][0:remaining]
 	return offspring
 
+
 def search(fn_evals, max_gens, pop_size, p_cross):
+
 	fnbits = int(np.log2(len(stage1)) + np.log2(len(stage2)) + np.log2(len(stage3)))	# calculate total bits used for picking fn
 	pop = [{"bitstring":random_bitstring(fnbits)} for i in range(pop_size)]
-	print(pop)
+
 	calculate_objectives(pop, fn_evals)
 	fast_nondominated_sort(pop)
-	selected = [better(pop[randrange(pop_size)], pop[randrange(pop_size)]) for i in range(pop_size)]
+
+	selected = [better(pop[np.random.randint(pop_size)], pop[np.random.randint(pop_size)]) for i in range(pop_size)]
 	children = reproduce(selected, pop_size, p_cross)
 
 	calculate_objectives(children, fn_evals)
+	print(" > starting generations")
+
 	for gen in range(max_gens):
+
 		union = pop + children
 		fronts = fast_nondominated_sort(union)
 		parents = select_parents(fronts, pop_size)
-		selected = [better(parents[randrange(pop_size)], parents[randrange(pop_size)]) for i in range(pop_size)]
+
+		selected = [better(parents[np.random.randint(pop_size)], parents[np.random.randint(pop_size)]) for i in range(pop_size)]
 		pop = children
 		children = reproduce(selected, pop_size, p_cross)
+
 		calculate_objectives(children, fn_evals)
+
 		best = min(parents, key = weighted_sum)
 
 		print(" > gen = {}, fronts = {}".format(gen+1, len(fronts)))
@@ -170,11 +211,6 @@ def search(fn_evals, max_gens, pop_size, p_cross):
 	parents = select_parents(fronts, pop_size)
 	return parents
 
-
-max_gens = 50
-pop_size = 100
-p_cross = 0.98
-fn_evals = 100
-
-pop = search(fn_evals, max_gens, pop_size, p_cross)
+pop = search(nsga_fn_evals, nsga_max_gens, nsga_pop_size, nsga_p_cross)
 print("done!")
+

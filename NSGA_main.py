@@ -3,6 +3,7 @@ import sys, os 				# import all algorithms in sub-directory
 for directory in os.listdir("algorithms"):
 	sys.path.insert(0, f"algorithms/{directory}")
 import firefly, pso
+import models
 
 #---- NSGA SETTINGS ------------------------------
 
@@ -10,49 +11,65 @@ nsga_max_gens = 50			# number of generations in NSGA-II
 nsga_pop_size = 100 		# how many combinations there are
 nsga_p_cross = 0.98			# mutation crossover probability
 nsga_fn_evals = 25 			# how many evaluations to average
+nsga_bits_per_param = 8 	# bits / precision to use for each parameter
 
-stage1 = [firefly.search, pso.search]	# s1 algos; return a list of vectors
-stage2 = [lambda x: x, lambda x: x]		# s2 algos; return a list of vectors
-stage3 = [lambda x: 0, lambda x: 0]		# s3 algos; return a margin of error
+model_objective = models.RLLWei
+model_dimensions = 2
+model_search_space = [[0, 1] for x in range(model_dimensions)]	# 3 dimensional co-variate search space
+model_pop_count = 25											# pop size for method
+model_generations = 25											# generations used in method
+model_init_pop = [[136/336600, 1.0] for x in range(model_pop_count)]	# None 		# set to none if randomized
+
+stage1 = [	{	"algo":	firefly.search,	#formatted by algorithm then variable parameters base +- diff
+				"params":[
+					[0.95, 0.05],
+					[0.96, 0.04]
+				]
+			},
+			{
+				"algo":	pso.search,
+				"params":[
+					[0.5, 0.15],
+					[0.1, 0.05],
+					[0.1, 0.05]
+				]
+			}]
+stage2 = [lambda x: x]*2				# s2 algos; return a list of vectors
+stage3 = [lambda x: min(model_objective(y) for y in x)]*2		# s3 algos; return a margin of error
 
 
 def weighted_sum(x):					# function that outright chooses a "best" candidate
+	return x["objectives"][0]*2000000 + x["objectives"][1]			# for weibull 
 	return sum(x["objectives"])
-
-
-def objective(vector):					# minimized objective function
-	return sum([(x-0.45)**2 for x in vector])
 
 #---------------begin NSGA-II---------------------
 
 import numpy as np
 import time
 
-
-def decode(bitstring):
-
-	search_space = [[0, 1] for x in range(1)]	# 3 dimensional co-variate search space
-	pcount = 25
-	generations = 25
-
-	pop = [[ np.random.uniform(y[0],y[1]) for y in search_space] for x in range(pcount)]
-
-	params = (objective, search_space, generations, pop)
+def decode(bitstring, bpp):
+	params = (model_objective, model_search_space, model_generations, model_init_pop, model_pop_count)
 
 	s1, s2, s3 = int(np.log2(len(stage1))), int(np.log2(len(stage2))), int(np.log2(len(stage3)))
-	print(bitstring)
-	i1 = 0 if s1 == 0 else int(bitstring[0:s1], 2)
-	i2 = 0 if s1 == 0 else int(bitstring[s1:s1+s2], 2)
-	i3 = 0 if s1 == 0 else int(bitstring[s1+s2:s1+s2+s3], 2)
+	i1 = int(bitstring[0:s1], 2)
+	i2 = int(bitstring[s1:s1+s2], 2)
+	i3 = int(bitstring[s1+s2:s1+s2+s3], 2)
+
+	param_bits = bitstring[s1+s2+s3:]
+	for idx, prm in enumerate(stage1[i1]["params"]):
+		this_bits = param_bits[idx * bpp :][:8]	# get part of bitstring corresponding to parameter
+
+		rng = int(this_bits, 2) / (2 ** bpp - 1)		# get range of 0-1 that 000... -> 111... is
+		diff = 2 * rng - 1								# transform it from -1 <-> 1
+		params += (prm[0] + prm[1]*diff,)				# append param +- diff to list of parameters
 
 			# this returns a function that evals s1, hands it to s2, then s3, which returns margin of error
-			# which is an objective alongside the amount of time it took
-	return (lambda x: stage3[i3]( stage2[i2]( stage1[i1]( *x ) ) )), params
+	return (lambda x: stage3[i3]( stage2[i2]( stage1[i1]["algo"]( *x ) ) )), params
 
 
-def calculate_objectives(pop, fn_count):
+def calculate_objectives(pop, fn_count, bpp):
 	for p in pop:                       # find fitness of each member of a population in order to find pareto-fitness
-		fn, params = decode(p["bitstring"])
+		fn, params = decode(p["bitstring"], bpp)
 		runtime = 0
 		errorsum = 0
 		for i in range(fn_count):
@@ -176,18 +193,20 @@ def select_parents(fronts, pop_size):
 	return offspring
 
 
-def search(fn_evals, max_gens, pop_size, p_cross):
+def search(fn_evals, max_gens, pop_size, p_cross, bpp):
+
+	paramcount = len(max(stage1, key = lambda x: len(x["params"]))["params"])
 
 	fnbits = int(np.log2(len(stage1)) + np.log2(len(stage2)) + np.log2(len(stage3)))	# calculate total bits used for picking fn
-	pop = [{"bitstring":random_bitstring(fnbits)} for i in range(pop_size)]
+	pop = [{"bitstring":random_bitstring(fnbits + bpp * paramcount)} for i in range(pop_size)]
 
-	calculate_objectives(pop, fn_evals)
+	calculate_objectives(pop, fn_evals, bpp)
 	fast_nondominated_sort(pop)
 
 	selected = [better(pop[np.random.randint(pop_size)], pop[np.random.randint(pop_size)]) for i in range(pop_size)]
 	children = reproduce(selected, pop_size, p_cross)
 
-	calculate_objectives(children, fn_evals)
+	calculate_objectives(children, fn_evals, bpp)
 	print(" > starting generations")
 
 	for gen in range(max_gens):
@@ -200,7 +219,7 @@ def search(fn_evals, max_gens, pop_size, p_cross):
 		pop = children
 		children = reproduce(selected, pop_size, p_cross)
 
-		calculate_objectives(children, fn_evals)
+		calculate_objectives(children, fn_evals, bpp)
 
 		best = min(parents, key = weighted_sum)
 
@@ -211,6 +230,6 @@ def search(fn_evals, max_gens, pop_size, p_cross):
 	parents = select_parents(fronts, pop_size)
 	return parents
 
-pop = search(nsga_fn_evals, nsga_max_gens, nsga_pop_size, nsga_p_cross)
+pop = search(nsga_fn_evals, nsga_max_gens, nsga_pop_size, nsga_p_cross, nsga_bits_per_param)
 print("done!")
 

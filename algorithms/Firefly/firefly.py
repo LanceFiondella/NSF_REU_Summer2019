@@ -21,7 +21,7 @@ def gaussian_random(scalar, search_space, generation):
 def search(objective, search_space, max_gens, pop = None, pop_count = 30, absorption = 1, randomness = 0.99):
 
 	if pop == None:
-		pop = [{"vector":random_vector(search_space)} for x in pop_count]
+		pop = [{"vector":random_vector(search_space)} for x in range(pop_count)]
 	else:
 		pop = [{"vector":x} for x in pop]
 

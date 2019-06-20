@@ -2,7 +2,7 @@
 import sys, os 				# import all algorithms in sub-directory
 for directory in os.listdir("algorithms"):
 	sys.path.insert(0, f"algorithms/{directory}")
-import firefly, pso
+import firefly, pso, pollination
 import models
 
 #---- NSGA SETTINGS ------------------------------
@@ -18,7 +18,7 @@ model_dimensions = 2
 model_search_space = [[0, 1] for x in range(model_dimensions)]	# 3 dimensional co-variate search space
 model_pop_count = 25											# pop size for method
 model_generations = 25											# generations used in method
-model_init_pop = [[136/336600, 1.0] for x in range(model_pop_count)]	# None 		# set to none if randomized
+model_init_pop = [[404/1000000, 1] for x in range(model_pop_count)]	# None 		# set to none if randomized
 
 stage1 = [	{	"algo":	firefly.search,	#formatted by algorithm then variable parameters base +- diff
 				"params":[
@@ -33,14 +33,16 @@ stage1 = [	{	"algo":	firefly.search,	#formatted by algorithm then variable param
 					[0.1, 0.05],
 					[0.1, 0.05]
 				]
+			},
+			{
+				"algo":	pollination.search,
+				"params":[
+					[0.7, 0.2]
+				]
 			}]
 stage2 = [lambda x: x]*2				# s2 algos; return a list of vectors
 stage3 = [lambda x: min(model_objective(y) for y in x)]*2		# s3 algos; return a margin of error
 
-
-def weighted_sum(x):					# function that outright chooses a "best" candidate
-	return x["objectives"][0]*2000000 + x["objectives"][1]			# for weibull 
-	return sum(x["objectives"])
 
 #---------------begin NSGA-II---------------------
 
@@ -66,6 +68,24 @@ def decode(bitstring, bpp):
 			# this returns a function that evals s1, hands it to s2, then s3, which returns margin of error
 	return (lambda x: stage3[i3]( stage2[i2]( stage1[i1]["algo"]( *x ) ) )), params
 
+def name(bitstring, bpp):
+
+	params = ()
+
+	s1, s2, s3 = int(np.log2(len(stage1))), int(np.log2(len(stage2))), int(np.log2(len(stage3)))
+	i1 = int(bitstring[0:s1], 2)
+	i2 = int(bitstring[s1:s1+s2], 2)
+	i3 = int(bitstring[s1+s2:s1+s2+s3], 2)
+
+	param_bits = bitstring[s1+s2+s3:]
+	for idx, prm in enumerate(stage1[i1]["params"]):
+		this_bits = param_bits[idx * bpp :][:8]	# get part of bitstring corresponding to parameter
+
+		rng = int(this_bits, 2) / (2 ** bpp - 1)		# get range of 0-1 that 000... -> 111... is
+		diff = 2 * rng - 1								# transform it from -1 <-> 1
+		params += (prm[0] + prm[1]*diff,)				# append param +- diff to list of parameters
+
+	return [stage1[i1]["algo"].__module__, params]
 
 def calculate_objectives(pop, fn_count, bpp):
 	for p in pop:                       # find fitness of each member of a population in order to find pareto-fitness
@@ -221,8 +241,6 @@ def search(fn_evals, max_gens, pop_size, p_cross, bpp):
 
 		calculate_objectives(children, fn_evals, bpp)
 
-		best = min(parents, key = weighted_sum)
-
 		print(" > gen = {}, fronts = {}".format(gen+1, len(fronts)))
 
 	union = pop + children
@@ -233,3 +251,6 @@ def search(fn_evals, max_gens, pop_size, p_cross, bpp):
 pop = search(nsga_fn_evals, nsga_max_gens, nsga_pop_size, nsga_p_cross, nsga_bits_per_param)
 print("done!")
 
+pop.sort(key = lambda x: 1500*x["objectives"][0] + x["objectives"][1])
+for p in pop:
+	print("{} {}".format('\t'.join([str(x) for x in p["objectives"]]), name(p["bitstring"], nsga_bits_per_param)))

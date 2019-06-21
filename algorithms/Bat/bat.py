@@ -41,6 +41,40 @@ def calc_pulse_rate(initial_rate, gamma, iteration):
     """
     return initial_rate * (1 - math.exp(-1 * gamma * iteration))
 
+def position_within_bounds(pos, search_space, dimension):
+    """Ensures the new position is within bounds of the search space.
+
+    Keyword arguments:
+    pos (float) -- new created position
+    search_space (list) -- search space of problem
+    dimension (int) -- current dimension of loop in search function
+
+    Returns:
+    float -- position within search space
+    """
+    if (pos < search_space[dimension][0]):
+        return search_space[dimension][0]
+    elif (pos > search_space[dimension][1]):
+        return search_space[dimension][1]
+    else:
+    	return pos
+
+def local_search(bats, population_count, problem_size, new_position, best):
+    avg_loudness = average_loudness(bats, population_count)     # used to calculate new position
+    # loop over all dimensions
+    for j in range(problem_size):
+        # random walks, avg_loudness limits step size since loudness decreases
+        # over time, local solutions have smaller steps in later iterations
+        new_position[j] = best["position"][j] + np.random.normal(0.0, 1.0) * avg_loudness
+
+def global_search(bats, problem_size, new_position, best, search_space, i):
+    # loop over all dimensions
+    for j in range(problem_size):
+        # calculate new velocity (in each dimension) for bat
+        bats[i]["velocity"][j] = bats[i]["velocity"][j] + (bats[i]["position"][j] - best["position"][j]) * bats[i]["frequency"]
+        pos = bats[i]["position"][j] + bats[i]["velocity"][j]   # generate new solution (positions)
+        new_position[j] = position_within_bounds(pos, search_space, j)
+
 def initialize_population(pop_size, problem_size, freq_min, freq_max, objective):
     """Creates an initial random population of bats.
 
@@ -89,7 +123,7 @@ def init_passed_population(population, pop_size, problem_size, freq_min, freq_ma
     return pop
 
 def search(objective, search_space, max_generations, population, population_count, 
-           freq_range=[0.0, 1.0], alpha=0.9, gamma=0.9):
+           freq_min=0.0, freq_max=1.0, alpha=0.9, gamma=0.9):
     """Performs bat algorithm search for a global minimum of passed objective function.
 
     Keyword arguments:
@@ -107,8 +141,6 @@ def search(objective, search_space, max_generations, population, population_coun
     """
     problem_size = len(search_space)    # search space provides bounds for each dimension of problem,
                                         # length of this list provides number of dimensions
-    freq_min = freq_range[0]            # first element of frequency range list is min
-    freq_max = freq_range[1]            # second element of frequency range list is max
     # initialize bat population using passed population
     bats = init_passed_population(population, population_count, problem_size, freq_min, freq_max, objective)
     new_position = [0 for j in range(problem_size)]     # list to hold created candidate solutions
@@ -118,40 +150,35 @@ def search(objective, search_space, max_generations, population, population_coun
         # loop over all bats in population
         for i in range(population_count):
             # generate new solutions by adjusting frequency, updating velocities and positions
-            # calculate new frequency for bat
+            # calculate new frequency for bat, uniform random between min and max
             bats[i]["frequency"] = freq_min + (freq_max - freq_min) * random.random()
-            # loop over all dimensions
-            for j in range(problem_size):
-                # calculate new velocity (in each dimension) for bat
-                bats[i]["velocity"][j] = bats[i]["velocity"][j] + (bats[i]["position"][j] - best["position"][j]) * bats[i]["frequency"]
-                new_position[j] = bats[i]["position"][j] + bats[i]["velocity"][j]   # generate new solution (positions)
+            global_search(bats, problem_size, new_position, best, search_space, i)
             pulse_rate = calc_pulse_rate(bats[i]["init_pulse_rate"], gamma, t)      # calculate pulse rate to be used in following conditional
             if (random.random() > pulse_rate):
                 # generate local solution around selected best solution
-                avg_loudness = average_loudness(bats, population_count)     # used to calculate new position
-                # loop over all dimensions
-                for j in range(problem_size):
-                    new_position[j] = best["position"][j] + np.random.normal(0.0, 1.0) * avg_loudness
+                local_search(bats, population_count, problem_size, new_position, best)
             new_fitness = objective(new_position)   # evaluate fitness of new solution
             # new solution position replaces current bat if it has lower fitness
             # AND a random value [0, 1) is less than current loudness
-            if (random.random() < bats[i]["loudness"] and new_fitness < best["fitness"]):
+            if (random.random() < bats[i]["loudness"] and new_fitness < bats[i]["fitness"]):
                 bats[i]["position"] = list(new_position)            # accept new solution
+                bats[i]["fitness"] = new_fitness
                 bats[i]["loudness"] = alpha * bats[i]["loudness"]   # update bat loudness
             # if new generated solution has better fitness than previous best, it becomes new best
             if (new_fitness < best["fitness"]):
                 best["position"] = list(new_position)
+                best["fitness"] = new_fitness
     # return list of final position vectors
     final_positions = [bats[i]["position"] for i in range(population_count)]
-    #print("best =", best["position"], "fitness =", best["fitness"])
+    print("best =", best["position"], "fitness =", best["fitness"])    # un-comment to print out results
     return final_positions
 
 def main():
     # initialize parameters
     pop_size = 25           # population size
-    #freq_min = 0.0          # minimum frequency
-    #freq_max = 1.0          # maximum frequency
-    freq_range = [0.0, 1.0]
+    freq_min = 0.0          # minimum frequency
+    freq_max = 1.0          # maximum frequency
+    #freq_range = [0.0, 1.0]
     max_iterations = 100
     #tol = 0.00001           # stop tolerance (unused in this implementation)
     problem_size = 2        # dimensions of search space
@@ -165,7 +192,7 @@ def main():
     initial_pop = [[random.gauss(0.0, 1.0) for j in range(problem_size)] for i in range(pop_size)]
 
     final_positions = search(objective_function, search_space, max_iterations, initial_pop, pop_size, 
-           freq_range, alpha, gamma)
+        freq_min, freq_max, alpha, gamma)
 
 if __name__== "__main__":
-  main()
+    main()

@@ -93,6 +93,7 @@ def initialize_population(pop_size, problem_size, freq_min, freq_max, objective)
              "velocity": [0 for j in range(problem_size)],
              "frequency": random.uniform(freq_min, freq_max),
              "init_pulse_rate": random.random(),
+             "pulse_rate": 0.0,
              "loudness": random.uniform(1.0, 2.0)   # "can typically be [1, 2]"
             } for i in range(pop_size)]
     for i in range(pop_size):
@@ -117,6 +118,7 @@ def init_passed_population(population, pop_size, problem_size, freq_min, freq_ma
              "velocity": [0 for j in range(problem_size)],
              "frequency": random.uniform(freq_min, freq_max),
              "init_pulse_rate": random.random(),
+             "pulse_rate": 0.0,
              "loudness": random.uniform(1.0, 2.0)   # "can typically be [1, 2]"
             } for i in range(pop_size)]
     for i in range(pop_size):
@@ -154,8 +156,7 @@ def search(objective, search_space, max_generations, population, population_coun
             # calculate new frequency for bat, uniform random between min and max
             bats[i]["frequency"] = freq_min + (freq_max - freq_min) * random.random()
             global_search(bats, problem_size, new_position, best, search_space, i)
-            pulse_rate = calc_pulse_rate(bats[i]["init_pulse_rate"], gamma, t)      # calculate pulse rate to be used in following conditional
-            if (random.random() > pulse_rate):
+            if (random.random() > bats[i]["pulse_rate"]):
                 # generate local solution around selected best solution
                 local_search(bats, population_count, problem_size, new_position, best, search_space)
             new_fitness = objective(new_position)   # evaluate fitness of new solution
@@ -165,13 +166,14 @@ def search(objective, search_space, max_generations, population, population_coun
                 bats[i]["position"] = list(new_position)            # accept new solution
                 bats[i]["fitness"] = new_fitness
                 bats[i]["loudness"] = alpha * bats[i]["loudness"]   # update bat loudness
+                bats[i]["pulse_rate"] = calc_pulse_rate(bats[i]["init_pulse_rate"], gamma, t)   # calculate pulse rate to be used in conditional
             # if new generated solution has better fitness than previous best, it becomes new best
             if (new_fitness < best["fitness"]):
                 best["position"] = list(new_position)
                 best["fitness"] = new_fitness
     # return list of final position vectors
     final_positions = [bats[i]["position"] for i in range(population_count)]
-    #print("best =", best["position"], "fitness =", best["fitness"])    # un-comment to print out results
+    print("best =", best["position"], "fitness =", best["fitness"])    # un-comment to print out results
     return final_positions
 
 def main():

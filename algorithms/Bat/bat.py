@@ -59,13 +59,14 @@ def position_within_bounds(pos, search_space, dimension):
     else:
     	return pos
 
-def local_search(bats, population_count, problem_size, new_position, best):
+def local_search(bats, population_count, problem_size, new_position, best, search_space):
     avg_loudness = average_loudness(bats, population_count)     # used to calculate new position
     # loop over all dimensions
     for j in range(problem_size):
         # random walks, avg_loudness limits step size since loudness decreases
         # over time, local solutions have smaller steps in later iterations
-        new_position[j] = best["position"][j] + np.random.normal(0.0, 1.0) * avg_loudness
+        npos = best["position"][j] + np.random.normal(0.0, 1.0) * avg_loudness
+        new_position[j] = position_within_bounds(npos, search_space, j)
 
 def global_search(bats, problem_size, new_position, best, search_space, i):
     # loop over all dimensions
@@ -156,7 +157,7 @@ def search(objective, search_space, max_generations, population, population_coun
             pulse_rate = calc_pulse_rate(bats[i]["init_pulse_rate"], gamma, t)      # calculate pulse rate to be used in following conditional
             if (random.random() > pulse_rate):
                 # generate local solution around selected best solution
-                local_search(bats, population_count, problem_size, new_position, best)
+                local_search(bats, population_count, problem_size, new_position, best, search_space)
             new_fitness = objective(new_position)   # evaluate fitness of new solution
             # new solution position replaces current bat if it has lower fitness
             # AND a random value [0, 1) is less than current loudness
@@ -170,7 +171,7 @@ def search(objective, search_space, max_generations, population, population_coun
                 best["fitness"] = new_fitness
     # return list of final position vectors
     final_positions = [bats[i]["position"] for i in range(population_count)]
-    print("best =", best["position"], "fitness =", best["fitness"])    # un-comment to print out results
+    #print("best =", best["position"], "fitness =", best["fitness"])    # un-comment to print out results
     return final_positions
 
 def main():

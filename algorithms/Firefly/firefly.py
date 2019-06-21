@@ -43,11 +43,4 @@ def search(objective, search_space, max_gens, pop = None, pop_count = 30, absorp
 
 					p["vector"] = np.add(p["vector"], term)
 					p["objective"] = objective(p["vector"]) #intensity(p["vector"], absorption)
-
-		best = min(pop, key = lambda x: x["objective"])
-
-		if(np.abs(last - best["objective"]) < 10**-5):	# short circuit if no progress
-			break
-		last = best["objective"]
-
 	return [x["vector"] for x in pop] 		# return the converged population

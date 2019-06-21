@@ -30,6 +30,13 @@ def search(objective, search_space, max_gen, population = None, pcount = 30, ome
 									+ phi_g * rg * (swarmbest["best"][d] - p["vector"][d])
 
 			p["vector"] = list(np.add(p["vector"], p["velocity"]))	# move the point, find new obj
+			for i in range(len(search_space)):
+				p["vector"][i] += p["velocity"][i]				# if new point is out of bounds, fix it
+				if p["vector"][i] > search_space[i][1]:
+					p["vector"][i] = search_space[i][1]
+				elif p["vector"][i] < search_space[i][0]:
+					p["vector"][i] = search_space[i][0]
+				
 			p["objective"] = objective(p["vector"])
 			if (p["objective"] < p["best_obj"]):				# if better than last, update it
 				p["best"] = p["vector"][:]

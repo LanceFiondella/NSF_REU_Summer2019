@@ -1,24 +1,24 @@
 
 import sys, os 				# import all algorithms in sub-directory
+import matplotlib.pyplot as plt
 for directory in os.listdir("algorithms"):
 	sys.path.insert(0, f"algorithms/{directory}")
-import firefly, pso, pollination
-import models
+import firefly, pso, pollination, bat
+from models import models
 
 #---- NSGA SETTINGS ------------------------------
 
-nsga_max_gens = 50			# number of generations in NSGA-II
+nsga_max_gens = 20			# number of generations in NSGA-II
 nsga_pop_size = 100 		# how many combinations there are
 nsga_p_cross = 0.98			# mutation crossover probability
-nsga_fn_evals = 25 			# how many evaluations to average
+nsga_fn_evals = 10 			# how many evaluations to average
 nsga_bits_per_param = 8 	# bits / precision to use for each parameter
+nsga_cross_breed = False	# TODO IMPLEMENT
 
-model_objective = models.RLLWei
-model_dimensions = 2
-model_search_space = [[0, 1] for x in range(model_dimensions)]	# 3 dimensional co-variate search space
+model = models["Weibull"]
 model_pop_count = 25											# pop size for method
 model_generations = 25											# generations used in method
-model_init_pop = [[404/1000000, 1] for x in range(model_pop_count)]	# None 		# set to none if randomized
+
 
 stage1 = [	{	"algo":	firefly.search,	#formatted by algorithm then variable parameters base +- diff
 				"params":[
@@ -39,10 +39,19 @@ stage1 = [	{	"algo":	firefly.search,	#formatted by algorithm then variable param
 				"params":[
 					[0.7, 0.2]
 				]
+			},
+			{
+				"algo": bat.search,
+				"params":[
+					[0.1, 0.1],
+					[0.9, 0.1],
+					[0.9, 0.08],
+					[0.8, 0.15]
+
+				]
 			}]
 stage2 = [lambda x: x]*2				# s2 algos; return a list of vectors
-stage3 = [lambda x: min(model_objective(y) for y in x)]*2		# s3 algos; return a margin of error
-
+stage3 = [lambda lst:min([model["objective"](x)/model["result"] for x in lst])]*2
 
 #---------------begin NSGA-II---------------------
 
@@ -50,6 +59,11 @@ import numpy as np
 import time
 
 def decode(bitstring, bpp):
+
+	model_objective = model["objective"]
+	model_search_space = [model["search_space"] for i in range(model["dimensions"])]
+	model_init_pop = [model["estimates"] for x in range(model_pop_count)]	# None 		# set to none if randomized
+
 	params = (model_objective, model_search_space, model_generations, model_init_pop, model_pop_count)
 
 	s1, s2, s3 = int(np.log2(len(stage1))), int(np.log2(len(stage2))), int(np.log2(len(stage3)))
@@ -59,7 +73,7 @@ def decode(bitstring, bpp):
 
 	param_bits = bitstring[s1+s2+s3:]
 	for idx, prm in enumerate(stage1[i1]["params"]):
-		this_bits = param_bits[idx * bpp :][:8]	# get part of bitstring corresponding to parameter
+		this_bits = param_bits[idx * bpp :][:nsga_bits_per_param]	# get part of bitstring corresponding to parameter
 
 		rng = int(this_bits, 2) / (2 ** bpp - 1)		# get range of 0-1 that 000... -> 111... is
 		diff = 2 * rng - 1								# transform it from -1 <-> 1
@@ -79,13 +93,13 @@ def name(bitstring, bpp):
 
 	param_bits = bitstring[s1+s2+s3:]
 	for idx, prm in enumerate(stage1[i1]["params"]):
-		this_bits = param_bits[idx * bpp :][:8]	# get part of bitstring corresponding to parameter
+		this_bits = param_bits[idx * bpp :][:nsga_bits_per_param]	# get part of bitstring corresponding to parameter
 
 		rng = int(this_bits, 2) / (2 ** bpp - 1)		# get range of 0-1 that 000... -> 111... is
 		diff = 2 * rng - 1								# transform it from -1 <-> 1
 		params += (prm[0] + prm[1]*diff,)				# append param +- diff to list of parameters
 
-	return [stage1[i1]["algo"].__module__, params]
+	return [stage1[i1]["algo"].__module__, *[ round(x, 3) for x in params]]
 
 def calculate_objectives(pop, fn_count, bpp):
 	for p in pop:                       # find fitness of each member of a population in order to find pareto-fitness
@@ -251,6 +265,12 @@ def search(fn_evals, max_gens, pop_size, p_cross, bpp):
 pop = search(nsga_fn_evals, nsga_max_gens, nsga_pop_size, nsga_p_cross, nsga_bits_per_param)
 print("done!")
 
-pop.sort(key = lambda x: 1500*x["objectives"][0] + x["objectives"][1])
+pop.sort(key = lambda x: 1+x["objectives"][0] + x["objectives"][1])
 for p in pop:
-	print("{} {}".format('\t'.join([str(x) for x in p["objectives"]]), name(p["bitstring"], nsga_bits_per_param)))
+	print('\t'.join([str(x) for x in p["objectives"]]), end="\t")
+	print('\t'.join([str(x) for x in name(p["bitstring"], nsga_bits_per_param)]))
+	n = name(p["bitstring"], nsga_bits_per_param)[0]
+	c = "b" if n == "bat" else "m" if n == "pso" else "r" if n == "firefly" else "k"
+	plt.plot(p["objectives"][0],p["objectives"][1],c+"o")
+
+plt.show()

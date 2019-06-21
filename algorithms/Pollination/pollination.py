@@ -6,7 +6,7 @@ import numpy as np
 def random_solution(search_space):
 	return [x[0] + random() * (x[1]-x[0]) for x in search_space]
 
-def search(objective, search_space, max_gen, pop = None, switch_prob = 0.8):
+def search(objective, search_space, max_gen, pop = None, pop_count = 30, switch_prob = 0.8):
 	if pop == None:
 		pop = [random_solution(search_space) for x in range(pop_count)]
 	best = min(pop, key = objective)
@@ -26,5 +26,4 @@ def search(objective, search_space, max_gen, pop = None, switch_prob = 0.8):
 				f = np.add(f, term) 
 				
 		best = min(pop, key = objective)
-	print(best)
 	return pop

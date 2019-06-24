@@ -134,7 +134,7 @@ def search (objective, search_space, max_generations, population = None, nests =
 def main():
     problem_size = 2                                                #Dimensional Space
     search_space = []
-    for i in range(0, problem_size): search_space.append([0, 5])    #
+    for i in range(0, problem_size): search_space.append([0, 5])
     max_generations = 100
     nests = 100
     ld = 1

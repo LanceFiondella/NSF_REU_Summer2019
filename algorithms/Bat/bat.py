@@ -173,7 +173,8 @@ def search(objective, search_space, max_generations, population, population_coun
                 best["fitness"] = new_fitness
     # return list of final position vectors
     final_positions = [bats[i]["position"] for i in range(population_count)]
-    print("best =", best["position"], "fitness =", best["fitness"])    # un-comment to print out results
+    if __name__== "__main__":
+        print("best =", best["position"], "fitness =", best["fitness"])    # un-comment to print out results
     return final_positions
 
 def main():

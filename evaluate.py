@@ -3,15 +3,15 @@ import sys, os 				# import all algorithms in sub-directory
 import matplotlib.pyplot as plt
 for directory in os.listdir("algorithms"):
 	sys.path.insert(0, f"algorithms/{directory}")
-import firefly, pso, pollination, bat
+import firefly, pso, pollination, bat, cuckoo
 from models import models
 
 #---- NSGA SETTINGS ------------------------------
 
-nsga_max_gens = 20			# number of generations in NSGA-II
-nsga_pop_size = 100 		# how many combinations there are
+nsga_max_gens = 10			# number of generations in NSGA-II
+nsga_pop_size = 50 		# how many combinations there are
 nsga_p_cross = 0.98			# mutation crossover probability
-nsga_fn_evals = 10 			# how many evaluations to average
+nsga_fn_evals = 3 			# how many evaluations to average
 nsga_bits_per_param = 8 	# bits / precision to use for each parameter
 nsga_cross_breed = False	# TODO IMPLEMENT
 
@@ -49,6 +49,14 @@ stage1 = [	{	"algo":	firefly.search,	#formatted by algorithm then variable param
 					[0.8, 0.15]
 
 				]
+			},
+			{
+				"algo": cuckoo.search,
+				"params":[
+					[0.97, 0.03],
+					[0.97, 0.03],
+					[0.25, 0.1]
+				]
 			}]
 stage2 = [lambda x: x]*2				# s2 algos; return a list of vectors
 stage3 = [lambda lst:min([model["objective"](x)/model["result"] for x in lst])]*2
@@ -79,8 +87,7 @@ def decode(bitstring, bpp):
 		diff = 2 * rng - 1								# transform it from -1 <-> 1
 		params += (prm[0] + prm[1]*diff,)				# append param +- diff to list of parameters
 
-			# this returns a function that evals s1, hands it to s2, then s3, which returns margin of error
-	return (lambda x: stage3[i3]( stage2[i2]( stage1[i1]["algo"]( *x ) ) )), params
+	return stage1[i1]["algo"], stage2[i2], stage3[i3], params
 
 def name(bitstring, bpp):
 
@@ -103,13 +110,15 @@ def name(bitstring, bpp):
 
 def calculate_objectives(pop, fn_count, bpp):
 	for p in pop:                       # find fitness of each member of a population in order to find pareto-fitness
-		fn, params = decode(p["bitstring"], bpp)
+		f1, f2, f3, params = decode(p["bitstring"], bpp)
+
 		runtime = 0
 		errorsum = 0
 		for i in range(fn_count):
 			stime = time.time()
-			errorsum += fn(params)
+			lst =  f1(*params)			#f3(f2(f1(*params)))
 			runtime += time.time() - stime
+			errorsum += f3(lst)
 											# objectives are average function runtime and error
 											# future: consider making error a list and checking std dev
 			p["objectives"] = [runtime/fn_count, errorsum/fn_count]

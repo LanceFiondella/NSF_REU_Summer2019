@@ -1,5 +1,8 @@
+# TODO - run cross-validation on other datasets after finding final convergent model parameters
 
-import sys, os 				# import all algorithms in sub-directory
+
+
+import sys, os, csv			# import all algorithms in sub-directory
 import matplotlib.pyplot as plt
 for directory in os.listdir("algorithms"):
 	sys.path.insert(0, f"algorithms/{directory}")
@@ -8,15 +11,15 @@ from models import models
 
 #---- NSGA SETTINGS ------------------------------
 
-nsga_max_gens = 25			# number of generations in NSGA-II
-nsga_pop_size = 100 		# how many combinations there are
+nsga_max_gens = 10			# number of generations in NSGA-II
+nsga_pop_size = 64 		# how many combinations there are, must be even
 nsga_p_cross = 0.98			# mutation crossover probability
 nsga_fn_evals = 10 			# how many evaluations to average
 nsga_bits_per_param = 8 	# bits / precision to use for each parameter
 nsga_cross_breed = True		# allow algorithms to change during the process
 
-model = models["Weibull"]
-model_pop_count = 25			# pop size for method
+model = models[sys.argv[1]]
+model_pop_count = 15		# pop size for method
 model_generations = 10		# generations used in method
 
 
@@ -68,7 +71,7 @@ stage1 = [	{	"algo":	firefly.search,	#formatted by algorithm then variable param
 					[0.7, 0.2]
 				]
 			}]
-stage2 = [lambda x: x]*2				# s2 algos; return a list of vectors
+stage2 = [lambda x: x]*2
 stage3 = [lambda lst:min([model["objective"](x)/model["result"] for x in lst])]*2
 
 #---------------begin NSGA-II---------------------
@@ -80,7 +83,9 @@ def decode(bitstring, bpp):
 
 	model_objective = model["objective"]
 	model_search_space = [model["search_space"] for i in range(model["dimensions"])]
-	model_init_pop = [model["estimates"] for x in range(model_pop_count)]	# None 		# set to none if randomized
+	model_init_pop = [
+		[t[0] + t[1]*np.random.uniform()*np.sign(np.random.uniform()-0.5) for t in model["estimates"]]
+		for x in range(model_pop_count)]	# None 		# set to none if randomized
 
 	params = (model_objective, model_search_space, model_generations, model_init_pop, model_pop_count)
 
@@ -100,20 +105,25 @@ def decode(bitstring, bpp):
 	return stage1[i1]["algo"], stage2[i2], stage3[i3], params
 
 def calculate_objectives(pop, fn_count, bpp):
-	for p in pop:                       # find fitness of each member of a population in order to find pareto-fitness
+	for index, p in enumerate(pop):                       # find fitness of each member of a population in order to find pareto-fitness
 		f1, f2, f3, params = decode(p["bitstring"], bpp)
 
 		runtime = 0
 		errorsum = 0
 		for i in range(fn_count):
 			stime = time.time()
-			lst =  f1(*params)			#f3(f2(f1(*params)))
+			lst =  f1(*params)			#returns a population closer to convergence
 			runtime += time.time() - stime
-			errorsum += f3(lst)
+
+			newerror = f3(lst)
+			if np.isnan(newerror):
+				newerror = float('inf')		# possible hotfix for NaN results, please investigate and fix
+			errorsum += newerror
 											# objectives are average function runtime and error
 											# future: consider making error a list and checking std dev
 			p["objectives"] = [runtime/fn_count, errorsum/fn_count]
-
+		print(f"   > {f1.__module__}: {index+1} / {len(pop)}                  " , end = '\r')
+	print('                              ', end= '\r')
 
 def random_bitstring(num_bits):       	# generate some n-length string of random bits
 	return str(bin(np.random.randint(2**num_bits)))[2:].zfill(num_bits)
@@ -288,16 +298,32 @@ print("done!\n")
 pop.sort(key = lambda x: 1+x["objectives"][0] + x["objectives"][1])
 print('\033[4m' + "runtime         error margin    algo    params(algo-specific)" + '\033[0m')
 for p in pop:
-	r = decode(p["bitstring"], nsga_bits_per_param)
-	n = r[0].__module__
-	c = "b" if n == "bat" else "m" if n == "pso" else "r" if n == "firefly" else "k" if n == "cuckoo" else ""
+	r, r2, r3, params = decode(p["bitstring"], nsga_bits_per_param)
+	n = r.__module__
+	c = "b" if n == "bat" else "m" if n == "pso" else "r" if n == "firefly" else "k" if n == "cuckoo" else "y" if n == "bee" else ""
 
 	print('\t'.join([str(round(x,8)) for x in p["objectives"]]), end="\t")
 	print(n, end="\t")
-	for i in r[3][5:]:
+	#outparams = r(*params)
+
+	#print(outparams, end="\t")
+	for i in params[5:]:
 		print(round(i,3), end="\t")
 	print()
 	plt.plot(p["objectives"][0],p["objectives"][1],c+"o")
+
+with open('output_populations.csv','w') as csvfile:
+	writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+	writer.writerow([f"NSGA GENS: {nsga_max_gens}",f"NSGA POP: {nsga_pop_size}",f"NSGA CROSSOVER: {nsga_p_cross}",f"NSGA AVG EVALS: {nsga_fn_evals}",f"NSGA CROSSBREED: {nsga_cross_breed}"])
+	writer.writerow([f"MODEL: {[x for x in models if models[x]==model][0]}", f"MODEL POP: {model_pop_count}", f"MODEL GENS: {model_generations}"])
+	writer.writerow([])
+	writer.writerow(["algorithm", "runtime", "1+epsilon (error)", "best candidate's model parameters"])
+	for p in pop:
+		r, _, _, params = decode(p["bitstring"], nsga_bits_per_param)
+		rs = r(*params)
+		objs = [model["objective"](x) for x in rs]
+		best = objs.index(min(objs))
+		writer.writerow([r.__module__, p["objectives"][0],p["objectives"][1], rs[best]])
 
 plt.title("1+ep vs time")
 plt.show()

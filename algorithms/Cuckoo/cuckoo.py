@@ -148,7 +148,7 @@ def main():
 	alpha = 1
 	pa = 0.25
 	population = None
-	best = search(objective_function, search_space, max_generations, population, nests, problem_size, ld, alpha, pa)
+	best = search(objective_function, max_generations, population, nests, problem_size, ld, alpha, pa)
 	for i in best:
 		print(i)
 

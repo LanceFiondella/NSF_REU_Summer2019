@@ -44,8 +44,6 @@ def search(objective, search_space, max_gens, pop = None, pop_count = 30, absorp
 							p["vector"][i] = search_space[i][1]
 
 					p["objective"] = objective(p["vector"]) #intensity(p["vector"], absorption)
-					if np.isnan(p["objective"]):			#hotfix for nan problem
-						p["objective"] = float('inf')
 	return [x["vector"] for x in pop] 		# return the converged population
 
 if __name__ == "__main__":

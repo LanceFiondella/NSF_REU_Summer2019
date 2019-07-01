@@ -8,9 +8,9 @@ def search(objective, search_space, max_gen, pop = None, pop_count = 30, look_pc
 
 		for p in pop:								# fit the bees for sorting, set up individual best if necessary
 			p["objective"] = objective(p["vector"])	# (will always update best on 1st iteration)
-			if p["objective"] < p["best_objective"]:
+			if (gen == 0) or (p["objective"] < p["best_objective"]):
 				p["best_objective"] = p["objective"]
-				p["best_vector"] = p["vector"]
+				p["best_vector"] = p["vector"].copy()
 
 		pop.sort(key = lambda x: x["objective"])
 

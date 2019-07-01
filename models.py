@@ -1,6 +1,8 @@
 import numpy as np
 from math import *
+import scipy
 
+import time
 #Weibull model
 
 data = np.array([3, 33, 146, 227, 342, 351, 353, 444, 556, 571, 709, 759, 836, 860, 968, 1056, 1726, 1846, 1872, 1986, 2311, 2366, 2608, 2676, 3098, 3278, 3288, 4434, 5034, 5049, 5085, 5089, 5089, 5097, 5324, 5389, 5565, 5623, 6080, 6380, 6477, 6740, 7192, 7447, 7644, 7837, 7843, 7922, 8738, 10089, 10237, 10258, 10491, 10625, 10982, 11175, 11411, 11442, 11811, 12559, 12559, 12791, 13121, 13486, 14708, 15251, 15261, 15277, 15806, 16185, 16229, 16358, 17168, 17458, 17758, 18287, 18568, 18728, 19556, 20567, 21012, 21308, 23063, 24127, 25910, 26770, 27753, 28460, 28493, 29361, 30085, 32408, 35338, 36799, 37642, 37654, 37915, 39715, 40580, 42015, 42045, 42188, 42296, 42296, 45406, 46653, 47596, 48296, 49171, 49416, 50145, 52042, 52489, 52875, 53321, 53443, 54433, 55381, 56463, 56485, 56560, 57042, 62551, 62651, 62661, 63732, 64103, 64893, 71043, 74364, 75409, 76057, 81542, 82702, 84566, 88682])
@@ -59,20 +61,82 @@ def RLLCV(x):
 	
 	return -(firstTerm + secondTerm + thirdTerm - fourthTerm)
 
+#--- ECM calculation ----------------------------------------------------------------
+def logL(b,c):
+	aHat = n / (1-np.exp(-b*(tn**c)))
+	return (-n +sum(np.log(aHat*b*c*np.power(data.FT,(c-1))*np.exp(-b*np.power(data.FT,c)))))
+
+def bMLE(b):
+	aMLE = n/ (1 - np.exp(-b * np.power(tn,c)))
+	return -aMLE*np.power(tn,c)*np.exp(-b *np.power(tn,c))+ sum((1-b*np.power(data.FT,c))/(b))
+
+def cMLE(c):
+	aMLE = n/ (1 - np.exp(-b * np.power(tn,c)))
+	return -aMLE*b*np.power(tn,c)*np.log(tn)*np.exp(-b*np.power(tn,c)) + (n/c) + sum(np.log(data.FT)-b*np.log(data.FT)*np.power(data.FT,c))
+
+def ECM():
+
+	TimeList = []
+	LLList = []
+	bList = []
+	cList = []
+	jList = []
+
+	for i in range(100):
+		stime = time.perf_counter()
+		brule = [n/np.sum(data)]
+		crule = [1.0]
+
+		ll_list = [logL(brule[0], crule[0])]
+		ll_error_list = []
+		ll_error = 1
+		j = 0
+
+		while ll_error > 1e-10:
+			c = crule[j]
+			b_est = scipy.optimize.fsolve(bMLE, x0 = brule[j])
+			brule.append(b_est)
+			del c
+
+			b = brule[j+1]
+			c_est = scipy.optimize.fsolve(cMLE, x0 = crule[j])
+			crule.append(c_est)
+			del b
+
+			ll_list.append(logL(b_est, c_est))
+			j += 1
+			ll_error = ll_list[j] - ll_list[j-1]
+			ll_error_list.append(ll_error)
+
+		TimeList.append(time.perf_counter() - stime)
+		LLList.append(ll_list[-1])
+		bList.append(brule[-1])
+		cList.append(crule[-1])
+		jList.append(j)
+
+		return 0	#??????
 
 models = {
 	"Weibull":{
 		"objective":	RLLWei,
 		"dimensions":	2,
 		"search_space":	[0,1],
-		"estimates":	[404/1000000, 1],
+		"estimates":	[
+							[0.1, 0.1],
+							[0.9, 0.1]#[404/1000000, 1],
+						],
 		"result":		966.08033
 	},
 	"Covariate":{
 		"objective":	RLLCV,
 		"dimensions":	4,
 		"search_space":	[0,1],
-		"estimates":	[0.1, 0,0,0],
+		"estimates":	[
+							[0.2, 0.2],
+							[0.2, 0.2],
+							[0.2, 0.2],
+							[0.2, 0.2]
+						],#[0.1,0,0,0],
 		"result":		23.0067
 	}
 }

@@ -11,24 +11,24 @@ from models import models
 
 #---- NSGA SETTINGS ------------------------------
 
-nsga_max_gens = 10			# number of generations in NSGA-II
+nsga_max_gens = 30			# number of generations in NSGA-II
 nsga_pop_size = 64 		# how many combinations there are, must be even
 nsga_p_cross = 0.98			# mutation crossover probability
-nsga_fn_evals = 10 			# how many evaluations to average
+nsga_fn_evals = 16 			# how many evaluations to average
 nsga_bits_per_param = 8 	# bits / precision to use for each parameter
-nsga_cross_breed = True		# allow algorithms to change during the process
+nsga_cross_breed = False		# allow algorithms to change during the process
 
 model = models[sys.argv[1]]
-model_pop_count = 15		# pop size for method
-model_generations = 10		# generations used in method
+model_pop_count = 18		# pop size for method
+model_generations = 20		# generations used in method
 
 
-stage1 = [	{	"algo":	firefly.search,	#formatted by algorithm then variable parameters base +- diff
-				"params":[
-					[0.95, 0.05],
-					[0.96, 0.04]
-				]
-			},
+stage1 = [	#{	"algo":	firefly.search,	#formatted by algorithm then variable parameters base +- diff
+			#	"params":[
+			#		[0.95, 0.05],
+			#		[0.96, 0.04]
+			#	]
+			#},
 			{
 				"algo":	pso.search,
 				"params":[
@@ -126,7 +126,8 @@ def calculate_objectives(pop, fn_count, bpp):
 	print('                              ', end= '\r')
 
 def random_bitstring(num_bits):       	# generate some n-length string of random bits
-	return str(bin(np.random.randint(2**num_bits)))[2:].zfill(num_bits)
+	return "".join([str(np.random.randint(2)) for i in range(num_bits)]).zfill(num_bits)
+										# cannot use bin(random) as that has 64-bit max
 
 
 def point_mutation(bitstring, rate=None):
@@ -255,7 +256,7 @@ def select_parents(fronts, pop_size):
 
 
 def search(fn_evals, max_gens, pop_size, p_cross, bpp):
-
+	starting_time = time.time()
 	paramcount = len(max(stage1, key = lambda x: len(x["params"]))["params"])
 
 	fnbits = int(np.ceil(np.log2(len(stage1))) + np.ceil(np.log2(len(stage2))) + np.ceil(np.log2(len(stage3))))
@@ -285,7 +286,7 @@ def search(fn_evals, max_gens, pop_size, p_cross, bpp):
 
 		calculate_objectives(children, fn_evals, bpp)
 
-		print("    > gen = {}, fronts = {}".format(gen+1, len(fronts)))
+		print(f"    > gen = {gen+1}\tfronts = {len(fronts)}\telapsed={round(time.time()-starting_time, 3)}")
 
 	union = pop + children
 	fronts = fast_nondominated_sort(union)

@@ -116,6 +116,9 @@ def ECM():
 
 		return 0	#??????
 
+def Sphere(vector):
+	return np.sum(np.square(vector)) + 1
+
 models = {
 	"Weibull":{
 		"objective":	RLLWei,
@@ -138,5 +141,12 @@ models = {
 							[0.2, 0.2]
 						],#[0.1,0,0,0],
 		"result":		23.0067
+	},
+	"Sphere10":{
+		"objective":	Sphere,
+		"dimensions":	10,
+		"search_space":	[-1,1],
+		"estimates":	[[ 0, 1] for i in range(10)],
+		"result":		1
 	}
 }

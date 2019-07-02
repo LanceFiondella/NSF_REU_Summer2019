@@ -4,10 +4,13 @@
 
 import sys, os, csv			# import all algorithms in sub-directory
 import matplotlib.pyplot as plt
+from models import models
+
 for directory in os.listdir("algorithms"):
 	sys.path.insert(0, f"algorithms/{directory}")
-import firefly, pso, pollination, bat, cuckoo, bee
-from models import models
+import firefly, pso, pollination, bat, cuckoo, bee, fish
+
+
 
 #---- NSGA SETTINGS ------------------------------
 
@@ -69,6 +72,15 @@ stage1 = [	#{	"algo":	firefly.search,	#formatted by algorithm then variable para
 				"algo":	pollination.search,
 				"params":[
 					[0.7, 0.2]
+				]
+			},
+			{
+				"algo": fish.search,
+				"params":[
+					[0.125, 0.075],
+					[4, 2],
+					[0.125, 0.075],
+					[2, 1],
 				]
 			}]
 stage2 = [lambda x: x]*2
@@ -132,7 +144,7 @@ def random_bitstring(num_bits):       	# generate some n-length string of random
 
 def point_mutation(bitstring, rate=None):
 
-	fnbits = int(np.ceil(np.log2(len(stage1))) + np.ceil(np.log2(len(stage2))) + np.ceil(np.log2(len(stage3))))
+	fnbits = int(np.ceil(np.log2(len(stage1))))
 
 	if rate == None:                    # basic genetic mutation, common to all gen methods
 		rate = 1/len(bitstring)
@@ -155,23 +167,21 @@ def crossover(parent1, parent2, rate):
 	return child
 
 
-def reproduce(selected, pop_size, p_cross):
+def reproduce(selected, pop_size, p_cross, bit_count):
 	children = []                       # generate new children population based off of parent population
 	for i, p1 in enumerate(selected):   # with crossovers and mutation
-		count = 1
+
 		if(not nsga_cross_breed):
-			while True:						# find another parent with same algorithm if exists
-				p2 = selected[(i+count)%len(selected)]				
-				if decode(p2["bitstring"], nsga_bits_per_param)[0] == decode(p1["bitstring"], nsga_bits_per_param)[0] :	# compare algo bits, OR if it's wrapped around force it to stop and pick one
-					break
-				if (count == len(selected)):
-					p2 = selected[i+1] if i%2 == 0 else selected[i-1]
-					break
+			count = 1
+			while True:
+				p2 = selected[(i+count)%len(selected)]
+				if p2["bitstring"][:bit_count] == p1["bitstring"][:bit_count]:
+					break			# possible problem if there's only one of a type in the pool
 				count += 1
 		else:
-			p2 = selected[i+1] if i%2 == 0 else selected[i-1]
-		if i == (len(selected) - 1):
-			p2 = selected[0]
+			p2 = selected[0] if (i == len(selected) - 1) else \
+					selected[i+1] if i%2 == 0 else selected[i-1]
+
 		child = {}
 		child["bitstring"] = crossover(p1["bitstring"], p2["bitstring"], p_cross)
 		child["bitstring"] = point_mutation(child["bitstring"])
@@ -259,6 +269,7 @@ def search(fn_evals, max_gens, pop_size, p_cross, bpp):
 	starting_time = time.time()
 	paramcount = len(max(stage1, key = lambda x: len(x["params"]))["params"])
 
+	algbits = int(np.ceil(np.log2(len(stage1))))
 	fnbits = int(np.ceil(np.log2(len(stage1))) + np.ceil(np.log2(len(stage2))) + np.ceil(np.log2(len(stage3))))
 						# calculate total bits used for picking fn
 	pop = [{"bitstring":random_bitstring(fnbits + bpp * paramcount)} for i in range(pop_size)]
@@ -268,7 +279,7 @@ def search(fn_evals, max_gens, pop_size, p_cross, bpp):
 	fast_nondominated_sort(pop)
 
 	selected = [better(pop[np.random.randint(pop_size)], pop[np.random.randint(pop_size)]) for i in range(pop_size)]
-	children = reproduce(selected, pop_size, p_cross)
+	children = reproduce(selected, pop_size, p_cross, algbits)
 
 	print(" > objectives of first child pop")
 	calculate_objectives(children, fn_evals, bpp)
@@ -282,11 +293,11 @@ def search(fn_evals, max_gens, pop_size, p_cross, bpp):
 
 		selected = [better(parents[np.random.randint(pop_size)], parents[np.random.randint(pop_size)]) for i in range(pop_size)]
 		pop = children
-		children = reproduce(selected, pop_size, p_cross)
+		children = reproduce(selected, pop_size, p_cross, algbits)
 
 		calculate_objectives(children, fn_evals, bpp)
 
-		print(f"    > gen = {gen+1}\tfronts = {len(fronts)}\telapsed={round(time.time()-starting_time, 3)}")
+		print(f"    > gen = {gen+1}\tfronts = {len(fronts)}\telapsed={round(time.time()-starting_time, 1)}")
 
 	union = pop + children
 	fronts = fast_nondominated_sort(union)
@@ -303,7 +314,7 @@ for p in pop:
 	n = r.__module__
 	c = "b" if n == "bat" else "m" if n == "pso" else "r" if n == "firefly" else "k" if n == "cuckoo" else "y" if n == "bee" else ""
 
-	print('\t'.join([str(round(x,8)) for x in p["objectives"]]), end="\t")
+	print('\t'.join([str(round(x,8)) for x in p["objectives"]]).zfill(10), end="\t")
 	print(n, end="\t")
 	#outparams = r(*params)
 

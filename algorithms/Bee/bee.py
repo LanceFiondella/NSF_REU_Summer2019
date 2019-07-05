@@ -7,14 +7,14 @@ def search(objective, search_space, max_gen, pop = None, pop_count = 30, look_pc
 	for gen in range(max_gen):
 
 		for p in pop:								# fit the bees for sorting, set up individual best if necessary
-			p["objective"] = objective(p["vector"])	# (will always update best on 1st iteration)
+			p["objective"] = objective(p["vector"])	# partitions depend on sortedness of the bees
 			if (gen == 0) or (p["objective"] < p["best_objective"]):
 				p["best_objective"] = p["objective"]
 				p["best_vector"] = p["vector"].copy()
 
 		pop.sort(key = lambda x: x["objective"])
 
-		best = pop[0]["vector"].copy()
+		best = pop[0]["vector"].copy()				# get a reference best that doesn't move
 
 		for i, p in enumerate(pop):
 
@@ -36,6 +36,11 @@ def search(objective, search_space, max_gen, pop = None, pop_count = 30, look_pc
 				nsearch = [np.random.uniform(x[0],x[1])*rmult*np.random.uniform() for x in search_space]
 													# get pseudo-radius walk in search space
 				p["vector"] = 	p["vector"] + np.array(nsearch)
+
+			for i in range(len(p["vector"])):		# keep it inside search space
+				p["vector"][i] = min(p["vector"][i], search_space[i][1])
+				p["vector"][i] = max(p["vector"][i], search_space[i][0])
+				
 		if __name__ == "__main__":
 			print(f" > iteration {gen+1}")
 	return [x["vector"] for x in pop]

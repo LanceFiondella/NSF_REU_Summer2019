@@ -28,11 +28,10 @@ def search(objective, search_space, max_gen, population = None, pcount = 30, ome
 							phi_g * (swarmbest["best"] - p["vector"]) * np.array([np.random.uniform() for x in p['vector']])
 
 			p["vector"] = p['vector'] + p['velocity']
-			for i in range(len(search_space)):
-				if p["vector"][i] > search_space[i][1]:
-					p["vector"][i] = search_space[i][1]
-				elif p["vector"][i] < search_space[i][0]:
-					p["vector"][i] = search_space[i][0]
+			
+			for i in range(len(p["vector"])):		# keep it inside search space
+				p["vector"][i] = min(p["vector"][i], search_space[i][1])
+				p["vector"][i] = max(p["vector"][i], search_space[i][0])
 				
 			p["objective"] = objective(p["vector"])
 

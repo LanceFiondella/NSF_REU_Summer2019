@@ -37,13 +37,12 @@ def search(objective, search_space, max_gens, pop = None, pop_count = 30, absorp
 									gaussian_random(randomness, search_space, gen) + \
 									attr * (n["vector"] - p["vector"])
 
-					for i in range(len(p["vector"])):
-						if p["vector"][i] < search_space[i][0]:
-							p["vector"][i] = search_space[i][0]
-						elif p["vector"][i] > search_space[i][1]:
-							p["vector"][i] = search_space[i][1]
+					for i in range(len(p["vector"])):		# keep it inside search space
+						p["vector"][i] = min(p["vector"][i], search_space[i][1])
+						p["vector"][i] = max(p["vector"][i], search_space[i][0])
 
-					p["objective"] = objective(p["vector"]) #intensity(p["vector"], absorption)
+					p["objective"] = objective(p["vector"])	# re-calculate objective value
+					
 	return [x["vector"] for x in pop] 		# return the converged population
 
 if __name__ == "__main__":

@@ -118,7 +118,7 @@ def search(objective, search_space, max_generations, population, population_coun
 	# initialize bat population using passed population
 	bats = init_passed_population(population, population_count, problem_size, freq_min, freq_max, objective)
 	new_position = np.array([0]*problem_size)     # list to hold created candidate solutions
-	best = min(bats, key=lambda x:x["fitness"])         # store intial best bat, based on lowest fitness
+	best = min(bats, key=lambda x:x["fitness"]).copy()         # store intial best bat, based on lowest fitness
 	# main loop runs for specified number of iterations
 	for t in range(max_generations):
 		# loop over all bats in population

@@ -62,7 +62,7 @@ def position_within_bounds(pos, search_space):
 
 def local_search(bats, population_count, problem_size, new_position, best, search_space):
 	avg_loudness = average_loudness(bats, population_count)     # used to calculate new position
-	npos = best["position"] + np.array([random.uniform()*avg_loudness for i in range(problem_size)])
+	npos = best["position"] + np.array([random.uniform(-1, 1)*avg_loudness for i in range(problem_size)])
 	return position_within_bounds(npos, search_space)
 
 def global_search(bats, problem_size, new_position, best, search_space, i):
@@ -125,7 +125,7 @@ def search(objective, search_space, max_generations, population, population_coun
 		for i in range(population_count):
 			# generate new solutions by adjusting frequency, updating velocities and positions
 			# calculate new frequency for bat, uniform random between min and max
-			bats[i]["frequency"] = freq_min + (freq_max - freq_min) * random.random()
+			bats[i]["frequency"] = random.uniform(freq_min, freq_max)
 			new_position = global_search(bats, problem_size, new_position, best, search_space, i)
 			if (random.random() > bats[i]["pulse_rate"]):
 				# generate local solution around selected best solution

@@ -12,7 +12,7 @@ def search(objective, search_space, max_gen, pop = None, pop_count = 30, look_pc
 				p["best_objective"] = p["objective"]
 				p["best_vector"] = p["vector"].copy()
 
-		pop.sort(key = lambda x: x["objective"])
+		pop.sort(key = lambda x: x["objective"])	# sort pop for ordering
 
 		best = pop[0]["vector"].copy()				# get a reference best that doesn't move
 
@@ -43,6 +43,7 @@ def search(objective, search_space, max_gen, pop = None, pop_count = 30, look_pc
 				
 		if __name__ == "__main__":
 			print(f" > iteration {gen+1}")
+
 	return [x["vector"] for x in pop]
 
 if __name__ == "__main__":

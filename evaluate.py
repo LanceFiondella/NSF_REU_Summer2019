@@ -1,7 +1,5 @@
 # TODO - run cross-validation on other datasets after finding final convergent model parameters
 
-
-
 import sys, os, csv			# import all algorithms in sub-directory
 import matplotlib.pyplot as plt
 from models import models
@@ -15,11 +13,11 @@ import firefly, pso, pollination, bat, cuckoo, bee, fish
 #---- NSGA SETTINGS ------------------------------
 
 nsga_max_gens = 30			# number of generations in NSGA-II
-nsga_pop_size = 64 		# how many combinations there are, must be even
+nsga_pop_size = 64 			# how many combinations there are, must be even
 nsga_p_cross = 0.98			# mutation crossover probability
 nsga_fn_evals = 16 			# how many evaluations to average
 nsga_bits_per_param = 8 	# bits / precision to use for each parameter
-nsga_cross_breed = False		# allow algorithms to change during the process
+nsga_cross_breed = False	# allow algorithms to change during the process
 
 model = models[sys.argv[1]]
 model_pop_count = 18		# pop size for method

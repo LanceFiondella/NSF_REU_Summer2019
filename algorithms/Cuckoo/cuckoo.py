@@ -117,25 +117,27 @@ def search (objective, search_space, max_generations, population = None, nests =
 			j['fitness'] = objective_function(j['vector'])
 
 	problem_size = len(search_space)
+
 	throw = int(pa * len(population))
-	keep =len(population) - throw
-	for gen in range(0, max_generations):
-		for test in range(0, nests):
-			rand_candidate = population[randint(0,len(population)-1)]
+	keep = len(population) - throw
+	
+	for gen in range(max_generations):
+		for test in range(nests):
+
+			rand_candidate = population[randint(len(population)-1)]
 			levy_solution = levy_flight(objective,search_space, rand_candidate,ld, problem_size,alpha)
 			rand2 = population[randint(0, len(population) - 1)]
+
 			if rand2['fitness'] > levy_solution['fitness']:
 				population.remove(rand2)
 				population.append(levy_solution)
+
 		population = sorted(population, key=lambda i: i['fitness'])
-		partial_nests = population[0:keep]
+		partial_nests = population[:keep]
 		new_nests = init_population(search_space, throw)
 		population = partial_nests + new_nests
 
-	final_positions = []
-	for i in population:
-		final_positions.append(i['vector'])
-	return final_positions
+	return [i['vector'] for i in population]
 
 
 def main():

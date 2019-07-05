@@ -124,7 +124,7 @@ def search (objective, search_space, max_generations, population = None, nests =
 	for gen in range(max_generations):
 		for test in range(nests):
 
-			rand_candidate = population[randint(len(population)-1)]
+			rand_candidate = population[randint(0, len(population)-1)]
 			levy_solution = levy_flight(objective,search_space, rand_candidate,ld, problem_size,alpha)
 			rand2 = population[randint(0, len(population) - 1)]
 

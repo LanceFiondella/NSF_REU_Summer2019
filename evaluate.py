@@ -6,7 +6,7 @@ from models import models
 
 for directory in os.listdir("algorithms"):
 	sys.path.insert(0, f"algorithms/{directory}")
-import firefly, pso, pollination, bat, cuckoo, bee, fish
+import firefly, pso, pollination, bat, cuckoo, bee, fish, wolf
 
 
 
@@ -79,6 +79,15 @@ stage1 = [	#{	"algo":	firefly.search,	#formatted by algorithm then variable para
 					[4, 2],
 					[0.125, 0.075],
 					[2, 1],
+				]
+			},
+			{
+				"algo": wolf.search,
+				"params":[
+					[0.5, 0.1],
+					[0.85, 0.15],
+					[0.5, 0.1],
+					[0.9, 0.075]
 				]
 			}]
 stage2 = [lambda x: x]*2	# todo: change phase 1 to phase 2

@@ -183,7 +183,7 @@ def escape_local(objective, best, cand, visual_range, search_space):
     new_pos['vector'] = cand['vector'] + np.multiply(term1,term2) + term3
 
     #Check Within search_space
-    for i in range(0, len(new_pos['vector'])):
+    for i in range(len(new_pos['vector'])):
         if new_pos['vector'][i] < search_space[i][0]: new_pos['vector'][i] = search_space[i][0]
         if new_pos['vector'][i] > search_space[i][1]: new_pos['vector'][i] = search_space[i][1]
     new_pos['fitness'] = objective(new_pos['vector'])
@@ -211,7 +211,7 @@ Returns:
 def escape_global(objective, cand, alpha, step, visual_range, search_space):
     new_pos = {}
     s = []
-    for i in range(0, len(search_space)):
+    for i in range(len(search_space)):
         max = visual_range[i][0]
         min =(search_space[i][1])/2
         if min > max:
@@ -219,7 +219,7 @@ def escape_global(objective, cand, alpha, step, visual_range, search_space):
         s.append([min, max])
     steps = np.multiply(alpha * step, random_vector(s))
     new_pos['vector'] = steps + cand['vector']
-    for i in range(0, len(new_pos['vector'])):
+    for i in range(len(new_pos['vector'])):
         if new_pos['vector'][i] < search_space[i][0]: new_pos['vector'][i] = search_space[i][0]
         if new_pos['vector'][i] > search_space[i][1]: new_pos['vector'][i] = search_space[i][1]
     new_pos['fitness'] = objective(new_pos['vector'])
@@ -251,7 +251,7 @@ def search(objective, search_space, max_generations, population=None, wolves=100
     if population == None: population = init_population(search_space, wolves)
 
     #Main loop that happens for max_generations times
-    for gen in range(0, max_generations):
+    for gen in range(max_generations):
 
         #Iterate through each solution each iteration
         for wolf in range(len(population)):

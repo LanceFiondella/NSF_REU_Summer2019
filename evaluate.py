@@ -1,35 +1,43 @@
 # TODO - run cross-validation on other datasets after finding final convergent model parameters
+# TODO - add population and generations to bitstring parameters?
 
-import sys, os, csv			# import all algorithms in sub-directory
-import matplotlib.pyplot as plt
+import sys, os
 from models import models
 
-for directory in os.listdir("algorithms"):
-	sys.path.insert(0, f"algorithms/{directory}")
-import firefly, pso, pollination, bat, cuckoo, bee, fish, wolf
+sys.path.insert(0, f"algorithms")
+import bat, bee, cuckoo, firefly, fish, pollination, pso, wolf
 
-
+colors = {
+	'bat':		'#020202',
+	'bee':		'#bbaf22',
+	'cuckoo':	'#ec994a',
+	'firefly': 	'#ff0000',
+	'fish':		'#3d7bff',
+	'pollination':'#ff3dff',
+	'pso':		'#3dd6ff',
+	'wolf':		'#e03e3e'
+}
 
 #---- NSGA SETTINGS ------------------------------
 
-nsga_max_gens = 30			# number of generations in NSGA-II
+nsga_max_gens = 25			# number of generations in NSGA-II
 nsga_pop_size = 64 			# how many combinations there are, must be even
 nsga_p_cross = 0.98			# mutation crossover probability
-nsga_fn_evals = 16 			# how many evaluations to average
+nsga_fn_evals = 8			# how many evaluations to average
 nsga_bits_per_param = 8 	# bits / precision to use for each parameter
 nsga_cross_breed = False	# allow algorithms to change during the process
 
 model = models[sys.argv[1]]
-model_pop_count = 18		# pop size for method
-model_generations = 20		# generations used in method
+model_pop_count = 25		# pop size for method
+model_generations = 5		# generations used in method
 
 
-stage1 = [	#{	"algo":	firefly.search,	#formatted by algorithm then variable parameters base +- diff
-			#	"params":[
-			#		[0.95, 0.05],
-			#		[0.96, 0.04]
-			#	]
-			#},
+stage1 = [	{	"algo":	firefly.search,	#formatted by algorithm then variable parameters base +- diff
+				"params":[
+					[0.95, 0.05],
+					[0.96, 0.04]
+				]
+			},
 			{						# algo points to search function in swarm file
 				"algo":	pso.search,
 				"params":[			# contains all constant parameters in terms of 
@@ -99,8 +107,12 @@ stage3 = [lambda lst:min([model["objective"](x)/model["result"] for x in lst])]*
 import numpy as np
 import time
 
-def decode(bitstring, bpp):
-
+def decode(bitstring):
+	'''
+	Takes some bit-pattern (some member of the population),
+	gives back the corresponding algorithms (phase 1, 2, 3)
+	as well as the parameters passed to ph1
+	'''
 	model_objective = model["objective"]				# get specific parameters for model
 	model_search_space = [model["search_space"] for i in range(model["dimensions"])]
 	model_init_pop = [									# generate population, pseudorandom
@@ -116,17 +128,21 @@ def decode(bitstring, bpp):
 
 	param_bits = bitstring[s1+s2+s3:]					# separate bits for variables
 	for idx, prm in enumerate(stage1[i1]["params"]):
-		this_bits = param_bits[idx * bpp :][:nsga_bits_per_param]	# get part of bitstring corresponding to parameter
+		this_bits = param_bits[idx * nsga_bits_per_param :][:nsga_bits_per_param]	# get part of bitstring corresponding to parameter
 
-		rng = int(this_bits, 2) / (2 ** bpp - 1)		# get range of 0-1 that 000... -> 111... is
+		rng = int(this_bits, 2) / (2 ** nsga_bits_per_param - 1)		# get range of 0-1 that 000... -> 111... is
 		diff = 2 * rng - 1								# transform it from -1 <-> 1
 		params += (prm[0] + prm[1]*diff,)				# append param +- diff to list of parameters
 
 	return stage1[i1]["algo"], stage2[i2], stage3[i3], params 	# send back algorithms & parameters for timing
 
-def calculate_objectives(pop, fn_count, bpp):
+def calculate_objectives(pop, fn_count):
+	'''
+	Given a population member, decodes and evaluates the
+	time and accuracy of its algorithms 
+	'''
 	for index, p in enumerate(pop):                       # find fitness of each member of a population in order to find pareto-fitness
-		f1, f2, f3, params = decode(p["bitstring"], bpp)
+		f1, f2, f3, params = decode(p["bitstring"])
 
 		runtime = 0
 		errorsum = 0
@@ -142,16 +158,25 @@ def calculate_objectives(pop, fn_count, bpp):
 
 			p["objectives"] = [runtime/fn_count, errorsum/fn_count]
 											# average runtime and error becomes objectives
-		print(f"   > {f1.__module__}: {index+1} / {len(pop)}                  " , end = '\r')
+		pct = index / (len(pop)-1)
+		print(f"\t[{''.join(['▆' if i/16 < pct else '▁' for i in range(16)])}]", end = '\r')
+		#print(f"   > {f1.__module__}: {index+1} / {len(pop)}                  " , end = '\r')
 	print('                              ', end= '\r')
 
-def random_bitstring(num_bits):       	# generate some n-length string of random bits
+def random_bitstring(num_bits):
+	'''
+	Generates a binary string of some length,
+		no limit on size
+	'''
 	return "".join([str(np.random.randint(2)) for i in range(num_bits)]).zfill(num_bits)
-										# cannot use bin(random) as that has 64-bit max
 
 
 def point_mutation(bitstring, rate=None):
-
+	'''
+	Mutates a bitstring according to some rate,
+	(flips bits at random) - will not change the
+	algorithm-choice bits if not enabled
+	'''
 	fnbits = int(np.ceil(np.log2(len(stage1))))
 
 	if rate == None:					# flip bits at random according to rate
@@ -167,6 +192,11 @@ def point_mutation(bitstring, rate=None):
 
 
 def crossover(parent1, parent2, rate):
+	'''
+	Creates hybrid algorithm based on two parents,
+	picks random bits from either, may rarely just
+	use one parent entirely
+	'''
 	if np.random.random_sample() >= rate:
 		return ""+parent1
 	child = ""
@@ -176,6 +206,12 @@ def crossover(parent1, parent2, rate):
 
 
 def reproduce(selected, pop_size, p_cross, bit_count):
+	'''
+	Generates new sub-population based on a selection
+	of an initial population with mutations and crossover
+	of random members - if cross-breed is disabled, 
+	parents will only have same algorithms
+	'''
 	children = []                       # generate new children population based off of parent population
 	for i, p1 in enumerate(selected):   # with crossovers and mutation
 
@@ -199,7 +235,11 @@ def reproduce(selected, pop_size, p_cross, bit_count):
 	return children
 
 
-def dominates(p1, p2):                # used to find whether one population is more dominant
+def dominates(p1, p2):
+	'''
+	Decides if a candidate p1 is dominant, i.e.
+	all objectives are no worse than the other p2
+	'''
 	for i in range(len(p1["objectives"])): # all traits are no worse than other
 		if p1["objectives"][i] > p2["objectives"][i]:	
 			return False
@@ -207,6 +247,10 @@ def dominates(p1, p2):                # used to find whether one population is m
 
 
 def fast_nondominated_sort(pop):
+	'''
+	Takes a population and sorts it into fronts, based on
+	which candidates dominate other candidates. 
+	'''
 	fronts = [[]]                       # generate a list of fronts for the next population
 	for p1 in pop:                      # lower "rank" value indicates dominated by less and therefore better
 		p1["dom_count"], p1["dom_set"] = 0, []
@@ -236,7 +280,12 @@ def fast_nondominated_sort(pop):
 
 
 def calculate_crowding_distance(pop):
-	for p in pop:                       # use crowding distance to preserve diverse options
+	'''
+	Sets crowding distance of each population member,
+	that is, the distance of its neighbors' objectives
+	in order to preserve diverse options within the population.
+	'''
+	for p in pop:
 		p["dist"] = 0
 	num_obs = len(pop[0]["objectives"])
 	for i in range(num_obs):
@@ -250,13 +299,22 @@ def calculate_crowding_distance(pop):
 			pop[j]["dist"] += (pop[j+1]["objectives"][i] - pop[j-1]["objectives"][i]) / rge
 
 
-def better(x, y):                     # decide which of two is best, for parent selection
+def better(x, y):
+	'''
+	Given two candidates, gives the better of the two
+	sorted by rank and then crowding distance
+	'''
 	if ("dist" in x.keys()) and (x["rank"] == y["rank"]):
 		return x if (x["dist"] > y["dist"]) else y
 	return x if (x["rank"] < y["rank"]) else y
 
 
 def select_parents(fronts, pop_size):
+	'''
+	Generates new parent population based off of fronts
+	from sorting, in order to fill the rest of the pop
+	with better candidates
+	'''
 	for f in fronts:
 		calculate_crowding_distance(f)	# generate new parent pop and sub-pop for new pop
 	offspring, last_front = [], 0
@@ -273,27 +331,40 @@ def select_parents(fronts, pop_size):
 	return offspring
 
 
-def search(fn_evals, max_gens, pop_size, p_cross, bpp):
+def search(fn_evals, max_gens, pop_size, p_cross):
+	'''
+	Main routine - creates population of algorithms,
+	runs initial sorting and new population, iteratively
+	runs re-evaluation until convergence
+	'''
 	starting_time = time.time()
 	paramcount = len(max(stage1, key = lambda x: len(x["params"]))["params"])
 
 	algbits = int(np.ceil(np.log2(len(stage1))))
 	fnbits = int(np.ceil(np.log2(len(stage1))) + np.ceil(np.log2(len(stage2))) + np.ceil(np.log2(len(stage3))))
 						# calculate total bits used for picking fn
-	pop = [{"bitstring":random_bitstring(fnbits + bpp * paramcount)} for i in range(pop_size)]
+	pop = [{"bitstring":random_bitstring(fnbits + nsga_bits_per_param * paramcount)} for i in range(pop_size)]
 
 	print(" > begin initial objectives & sort")
-	calculate_objectives(pop, fn_evals, bpp)
+	calculate_objectives(pop, fn_evals)
 	fast_nondominated_sort(pop)
 
 	selected = [better(pop[np.random.randint(pop_size)], pop[np.random.randint(pop_size)]) for i in range(pop_size)]
 	children = reproduce(selected, pop_size, p_cross, algbits)
 
 	print(" > objectives of first child pop")
-	calculate_objectives(children, fn_evals, bpp)
+	calculate_objectives(children, fn_evals)
 	print(" > starting generations")
 
 	for gen in range(max_gens):
+
+		t = {}	
+		for i in [ x[:-3] for x in os.listdir('algorithms') if x[-3:] == '.py']:
+			t[i] = 0
+		for p in pop:
+			m = decode(p["bitstring"])[0].__module__
+			t[m] += 1
+		algs.append(t)
 
 		union = pop + children
 		fronts = fast_nondominated_sort(union)
@@ -303,40 +374,52 @@ def search(fn_evals, max_gens, pop_size, p_cross, bpp):
 		pop = children
 		children = reproduce(selected, pop_size, p_cross, algbits)
 
-		calculate_objectives(children, fn_evals, bpp)
+		calculate_objectives(children, fn_evals)
 
-		print(f"    > gen = {gen+1}\tfronts = {len(fronts)}\telapsed={round(time.time()-starting_time, 1)}")
+		print(f"    > gen = {gen+1} / {max_gens}\tfronts = {len(fronts)}\telapsed={round(time.time()-starting_time, 1)}")
 
 	union = pop + children
 	fronts = fast_nondominated_sort(union)
 	parents = select_parents(fronts, pop_size)
 	return parents
 
-pop = search(nsga_fn_evals, nsga_max_gens, nsga_pop_size, nsga_p_cross, nsga_bits_per_param)
+algs = []
+
+pop = search(nsga_fn_evals, nsga_max_gens, nsga_pop_size, nsga_p_cross)
 print("done!\n")
 
 
 
-
 # ----------- VISUALIZATION -------------------------------------------------------------------------
+import matplotlib.pyplot as plt, csv
+
+pop.sort(key = lambda x: x["objectives"][0] * (x["objectives"][1]-1))
 
 
-pop.sort(key = lambda x: 1+x["objectives"][0] + x["objectives"][1])
 print('\033[4m' + "runtime         error margin    algo    params(algo-specific)" + '\033[0m')
 for p in pop:
-	r, r2, r3, params = decode(p["bitstring"], nsga_bits_per_param)
+	r, r2, r3, params = decode(p["bitstring"])
 	n = r.__module__
-	c = "b" if n == "bat" else "m" if n == "pso" else "r" if n == "firefly" else "k" if n == "cuckoo" else "y" if n == "bee" else ""
+	c = colors[n]
 
 	print('\t'.join([str(round(x,8)) for x in p["objectives"]]).zfill(10), end="\t")
 	print(n, end="\t")
-	#outparams = r(*params)
 
-	#print(outparams, end="\t")
 	for i in params[5:]:
 		print(round(i,3), end="\t")
 	print()
-	plt.plot(p["objectives"][0],p["objectives"][1],c+"o")
+
+	#plt.title("1+ep vs time")
+	#plt.plot(p["objectives"][0],p["objectives"][1],c+"o")
+
+names = [ x[:-3] for x in os.listdir('algorithms') if x[-3:] == '.py']
+prog = {}
+for n in names:
+	prog[n] = [x[n] for x in algs]
+for n in names:
+	plt.plot([l/nsga_pop_size for l in prog[n]],colors[n],label=n)
+plt.title('algorithm counts vs generation')
+plt.legend(loc='upper left')
 
 with open('output_populations.csv','w') as csvfile:
 	writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -345,11 +428,10 @@ with open('output_populations.csv','w') as csvfile:
 	writer.writerow([])
 	writer.writerow(["algorithm", "runtime", "1+epsilon (error)", "best candidate's model parameters"])
 	for p in pop:
-		r, _, _, params = decode(p["bitstring"], nsga_bits_per_param)
+		r, _, _, params = decode(p["bitstring"])
 		rs = r(*params)
 		objs = [model["objective"](x) for x in rs]
 		best = objs.index(min(objs))
 		writer.writerow([r.__module__, p["objectives"][0],p["objectives"][1], rs[best]])
 
-plt.title("1+ep vs time")
 plt.show()

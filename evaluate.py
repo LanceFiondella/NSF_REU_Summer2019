@@ -9,10 +9,7 @@
 # TODO - document variable ranges
 # TODO - check if converged uses endpoints of ranges (perhaps to increase ranges)
 # TODO - explore variants of best ones (bee, bat, pso, etc)
-# TODO - add to paper - "increasing bits is an easy way to scale precision"
 # TODO - paper; nsga math section
-# TODO - in "pso takes" pgh, change circledot to be \times
-# TODO - investigate resultant numbers not being that great (csv)
 # TODO - add best error to objectives instead of just average
 
 import matplotlib.pyplot as plt, csv

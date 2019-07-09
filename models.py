@@ -1,6 +1,7 @@
 import numpy as np
 from math import *
 import scipy, time, warnings
+import scipy.optimize
 
 warnings.filterwarnings("ignore")
 
@@ -63,60 +64,83 @@ def RLLCV(x):
 		return float('inf')
 	return cv
 
+#--- EM calculation -----------------------------------------------------------------
+def calcMLEs(x):
+    n = len(data)
+    tn = data[n-1] 
+    b, c = x 
+    aMLE = n/ (1 - np.exp(-b * np.power(tn,c)))
+    bHat = -aMLE*np.power(tn,c)*np.exp(-b *np.power(tn,c))+ sum((1-b*np.power(data,c))/(b))
+    cHat = -aMLE*b*np.power(tn,c)*np.log(tn)*np.exp(-b*np.power(tn,c)) + (n/c) + sum(np.log(data)-b*np.log(data)*np.power(data,c))
+    return [bHat, cHat]
+
+def calcMLEsSecondorder(x): #Verified so be sure to use this code throughout
+    n = len(data)
+    tn = data[n-1] 
+    b, c = x 
+    aMLE = n/ (1 - np.exp(-b * np.power(tn,c)))
+    bHat2 = -(n/np.power(b,2)) + ((np.exp(b*np.power(tn,c))*n*np.power(tn,2*c))/(np.power((1-np.exp(b*np.power(tn,c))),2)))
+    cFirstTerm = aMLE*b*np.power(tn,c)*np.exp(-b*np.power(tn,c))*(-1+b*np.power(tn,c))*np.power(np.log(tn),2)
+    cSecondTerm = -n/np.power(c,2)
+    cThirdTerm = np.sum(-b*np.power(np.log(data),2)*np.power(data,c))
+    cHat2 = cFirstTerm + cSecondTerm +cThirdTerm
+    return [bHat2, cHat2]
+
+def NM(estimates):
+    '''
+    Newton's method
+    '''
+    bMLEinit, cMLEinit = estimates
+    result = scipy.optimize.newton(calcMLEs,x0=(bMLEinit,cMLEinit), fprime=calcMLEsSecondorder, tol=1e-10, maxiter=10000, full_output=True)
+    return result.root, result.converged
+
 #--- ECM calculation ----------------------------------------------------------------
 def logL(b,c):
-	aHat = n / (1-np.exp(-b*(tn**c)))
-	return (-n +sum(np.log(aHat*b*c*np.power(data.FT,(c-1))*np.exp(-b*np.power(data.FT,c)))))
+    n = len(data)
+    tn = data[n-1]
+    aHat = n / (1-np.exp(-b*(tn**c)))
+    return (-n +sum(np.log(aHat*b*c*np.power(data,(c-1))*np.exp(-b*np.power(data,c)))))
 
-def bMLE(b):
-	aMLE = n/ (1 - np.exp(-b * np.power(tn,c)))
-	return -aMLE*np.power(tn,c)*np.exp(-b *np.power(tn,c))+ sum((1-b*np.power(data.FT,c))/(b))
+def bMLE(b, c):
+    n = len(data)
+    tn = data[n-1]
+    aMLE = n/ (1 - np.exp(-b * np.power(tn,c)))
+    return -aMLE*np.power(tn,c)*np.exp(-b *np.power(tn,c))+ sum((1-b*np.power(data,c))/(b))
 
-def cMLE(c):
-	aMLE = n/ (1 - np.exp(-b * np.power(tn,c)))
-	return -aMLE*b*np.power(tn,c)*np.log(tn)*np.exp(-b*np.power(tn,c)) + (n/c) + sum(np.log(data.FT)-b*np.log(data.FT)*np.power(data.FT,c))
+def cMLE(c, b):
+    n = len(data)
+    tn = data[n-1]
+    aMLE = n/ (1 - np.exp(-b * np.power(tn,c)))
+    return -aMLE*b*np.power(tn,c)*np.log(tn)*np.exp(-b*np.power(tn,c)) + (n/c) + sum(np.log(data)-b*np.log(data)*np.power(data,c))
 
-def ECM():
+def ECM(estimates):
+    n = len(data)
 
-	TimeList = []
-	LLList = []
-	bList = []
-	cList = []
-	jList = []
+    # brule = [n/np.sum(data)]
+    # crule = [1.0]
+    brule = [estimates[0]]
+    crule = [estimates[1]]
 
-	for i in range(100):
-		stime = time.perf_counter()
-		brule = [n/np.sum(data)]
-		crule = [1.0]
+    ll_list = [logL(brule[0], crule[0])]
+    ll_error = 1
+    j = 0
 
-		ll_list = [logL(brule[0], crule[0])]
-		ll_error_list = []
-		ll_error = 1
-		j = 0
+    while (ll_error > 1e-10):
+        c = crule[j]
+        b_est = scipy.optimize.fsolve(bMLE, x0 = brule[j], args=(c))
+        brule.append(b_est)
+        del c
 
-		while ll_error > 1e-10:
-			c = crule[j]
-			b_est = scipy.optimize.fsolve(bMLE, x0 = brule[j])
-			brule.append(b_est)
-			del c
+        b = brule[j+1]
+        c_est = scipy.optimize.fsolve(cMLE, x0 = crule[j], args=(b))
+        crule.append(c_est)
+        del b
 
-			b = brule[j+1]
-			c_est = scipy.optimize.fsolve(cMLE, x0 = crule[j])
-			crule.append(c_est)
-			del b
+        ll_list.append(logL(b_est, c_est))
+        j += 1
+        ll_error = ll_list[j] - ll_list[j-1]
 
-			ll_list.append(logL(b_est, c_est))
-			j += 1
-			ll_error = ll_list[j] - ll_list[j-1]
-			ll_error_list.append(ll_error)
-
-		TimeList.append(time.perf_counter() - stime)
-		LLList.append(ll_list[-1])
-		bList.append(brule[-1])
-		cList.append(crule[-1])
-		jList.append(j)
-
-		return 0	#??????
+    return np.array([brule[-1][0], crule[-1][0]])
 
 def Sphere(vector):
 	return np.sum(np.square(vector)) + 1
@@ -134,7 +158,7 @@ models = {
 							[0.1, 0.1],
 							[0.9, 0.1]#[404/1000000, 1],
 						],
-		"result":		966.0803348790324
+		"result":		686.34571
 	},
 	"Covariate":{
 		"objective":	RLLCV,
@@ -165,4 +189,13 @@ models = {
 }
 
 if __name__ == "__main__":
-	print(RLLWei([404/1000000, 1]))
+    #print(RLLWei([404/1000000, 1]))
+    root, converged = NM([1.00000000e-06, 4.96929036e-01])
+    print("-- NM --")
+    print(root)
+    print(RLLWei(root))
+    print(converged)
+    print("-- ECM --")
+    ecm_root = ECM([2, 2])
+    print(ecm_root)
+    print(RLLWei(ecm_root))

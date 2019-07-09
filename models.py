@@ -114,33 +114,22 @@ def cMLE(c, b):
     return -aMLE*b*np.power(tn,c)*np.log(tn)*np.exp(-b*np.power(tn,c)) + (n/c) + sum(np.log(data)-b*np.log(data)*np.power(data,c))
 
 def ECM(estimates):
-    n = len(data)
-
-    # brule = [n/np.sum(data)]
-    # crule = [1.0]
-    brule = [estimates[0]]
-    crule = [estimates[1]]
-
-    ll_list = [logL(brule[0], crule[0])]
-    ll_error = 1
-    j = 0
-
-    while (ll_error > 1e-10):
-        c = crule[j]
-        b_est = scipy.optimize.fsolve(bMLE, x0 = brule[j], args=(c))
-        brule.append(b_est)
-        del c
-
-        b = brule[j+1]
-        c_est = scipy.optimize.fsolve(cMLE, x0 = crule[j], args=(b))
-        crule.append(c_est)
-        del b
-
-        ll_list.append(logL(b_est, c_est))
-        j += 1
-        ll_error = ll_list[j] - ll_list[j-1]
-
-    return np.array([brule[-1][0], crule[-1][0]])
+    b_est, c_est = estimates                            # initial passed estimates for b and c
+    ll_list = [logL(b_est, c_est), logL(b_est, c_est)]  # used to compare current error to previous error in loop
+    ll_error = 1                                        # initial error
+    tolerance = 1e-10
+    while (ll_error > tolerance):
+        b_est = scipy.optimize.fsolve(bMLE, x0 = b_est, args=(c_est))   # solve for b using c estimate
+        c_est = scipy.optimize.fsolve(cMLE, x0 = c_est, args=(b_est))   # solve for c using b estimate
+        ll_list[1] = (logL(b_est, c_est))   # log likelihood of new estimates
+        ll_error = ll_list[1] - ll_list[0]  # calculate ll error, new ll - old ll
+        ll_list[0] = ll_list[1]             # calculated ll becomes old ll for next iteration
+    roots = np.array([b_est[0], c_est[0]])
+    if (RLLWei(roots) / models["Weibull"]["result"] <= tolerance + 1):
+        converged = True
+    else:
+        converged = False
+    return roots, converged
 
 def Sphere(vector):
 	return np.sum(np.square(vector)) + 1
@@ -158,7 +147,7 @@ models = {
 							[0.1, 0.1],
 							[0.9, 0.1]#[404/1000000, 1],
 						],
-		"result":		686.34571
+		"result":		966.0803348790324
 	},
 	"Covariate":{
 		"objective":	RLLCV,
@@ -196,6 +185,8 @@ if __name__ == "__main__":
     print(RLLWei(root))
     print(converged)
     print("-- ECM --")
-    ecm_root = ECM([2, 2])
+    # ecm_root, ecm_converged = ECM([2.0, 2.0])
+    ecm_root, ecm_converged = ECM([1.00000000e-06, 8.66658832e-02])
     print(ecm_root)
     print(RLLWei(ecm_root))
+    print(ecm_converged)

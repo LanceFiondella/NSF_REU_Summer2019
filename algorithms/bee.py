@@ -26,7 +26,7 @@ def search(objective, search_space, max_gen, pop = None, pop_count = 30, look_pc
 
 			elif i < (look_pct+exp_pct)*len(pop):	# "onlooker" bees
 
-				elite = np.random.choice(pop[:int(len(pop)*exp_pct)])
+				elite = np.random.choice(pop[:max(1,int(len(pop)*exp_pct))])
 													# get a random experienced bee
 				p["vector"] = 	p["vector"] + \
 								wg * np.random.uniform() * (elite["vector"] - p["vector"])

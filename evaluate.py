@@ -1,5 +1,21 @@
 # TODO - run cross-validation on other datasets after finding final convergent model parameters
 # TODO - add population and generations to bitstring parameters?
+# TODO - ADD NM/ECM runtime counting, maybe turn into single objective problem at some point (runtime)
+# TODO - histogram of all fn runtimes, "hills" should approach left at some point
+# TODO - firefly - check wei 'b' param - range too wide may be causing numbers to be NaN/inf
+# TODO - improve variable readibility (naming)
+# TODO - re-order functions for readability
+# TODO - add table to illustrations of ranges for params
+# TODO - document variable ranges
+# TODO - check if converged uses endpoints of ranges (perhaps to increase ranges)
+# TODO - explore variants of best ones (bee, bat, pso, etc)
+# TODO - add to paper - "increasing bits is an easy way to scale precision"
+# TODO - paper; nsga math section
+# TODO - in "pso takes" pgh, change circledot to be \times
+# TODO - investigate resultant numbers not being that great (csv)
+# TODO - add best error to objectives instead of just average
+
+import matplotlib.pyplot as plt, csv
 
 import sys, os
 from models import models
@@ -7,37 +23,28 @@ from models import models
 sys.path.insert(0, f"algorithms")
 import bat, bee, cuckoo, firefly, fish, pollination, pso, wolf
 
-colors = {
-	'bat':		'#020202',
-	'bee':		'#bbaf22',
-	'cuckoo':	'#ec994a',
-	'firefly': 	'#ff0000',
-	'fish':		'#3d7bff',
-	'pollination':'#ff3dff',
-	'pso':		'#3dd6ff',
-	'wolf':		'#e03e3e'
-}
-
 #---- NSGA SETTINGS ------------------------------
 
-nsga_max_gens = 25			# number of generations in NSGA-II
+nsga_max_gens = 16			# number of generations in NSGA-II
 nsga_pop_size = 64 			# how many combinations there are, must be even
 nsga_p_cross = 0.98			# mutation crossover probability
 nsga_fn_evals = 8			# how many evaluations to average
-nsga_bits_per_param = 8 	# bits / precision to use for each parameter
+nsga_bits_per_param = 16 	# bits / precision to use for each parameter
 nsga_cross_breed = False	# allow algorithms to change during the process
+nsga_free_range = False		# sets all parameter ranges to 0.5 +- 0.5 instead of predefined (needs more gens)
+nsga_cross_head_tail = True	# uses head/tail crossover instead of random bits
 
 model = models[sys.argv[1]]
-model_pop_count = 25		# pop size for method
-model_generations = 5		# generations used in method
+model_pop_count = 5		# pop size for method
+model_generations = 3		# generations used in method
 
 
-stage1 = [	{	"algo":	firefly.search,	#formatted by algorithm then variable parameters base +- diff
-				"params":[
-					[0.95, 0.05],
-					[0.96, 0.04]
-				]
-			},
+stage1 = [	#{	"algo":	firefly.search,	#formatted by algorithm then variable parameters base +- diff
+			#	"params":[
+			#		[0.95, 0.05],
+			#		[0.96, 0.04]
+			#	]
+			#},
 			{						# algo points to search function in swarm file
 				"algo":	pso.search,
 				"params":[			# contains all constant parameters in terms of 
@@ -99,7 +106,7 @@ stage1 = [	{	"algo":	firefly.search,	#formatted by algorithm then variable param
 				]
 			}]
 stage2 = [lambda x: x]*2	# todo: change phase 1 to phase 2
-stage3 = [lambda lst:min([model["objective"](x)/model["result"] for x in lst])]*2
+stage3 = [lambda lst:[model["objective"](x)/model["result"] for x in lst]]*2
 							# stage 3 calculates margin of error used as stat
 
 #---------------begin NSGA-II---------------------
@@ -132,35 +139,36 @@ def decode(bitstring):
 
 		rng = int(this_bits, 2) / (2 ** nsga_bits_per_param - 1)		# get range of 0-1 that 000... -> 111... is
 		diff = 2 * rng - 1								# transform it from -1 <-> 1
-		params += (prm[0] + prm[1]*diff,)				# append param +- diff to list of parameters
+		if nsga_free_range:
+			params += (0.5 + 0.5*diff,)				# append param +- diff to list of parameters
+		else:
+			params += (prm[0] + prm[1]*diff,)
 
 	return stage1[i1]["algo"], stage2[i2], stage3[i3], params 	# send back algorithms & parameters for timing
 
-def calculate_objectives(pop, fn_count):
+def calculate_measures(pop, fn_count):
 	'''
 	Given a population member, decodes and evaluates the
 	time and accuracy of its algorithms 
 	'''
 	for index, p in enumerate(pop):                       # find fitness of each member of a population in order to find pareto-fitness
-		f1, f2, f3, params = decode(p["bitstring"])
+		alg_1, alg_2, alg_3, params = decode(p["bitstring"])
 
 		runtime = 0
 		errorsum = 0
 		for i in range(fn_count):			# get average of N runs for timing
 			stime = time.time()
-			lst =  f1(*params)				# get time of swarm algorithm as well as values for error calc
+			lst =  alg_1(*params)				# get time of swarm algorithm as well as values for error calc
 			runtime += time.time() - stime
 
-			newerror = f3(lst)
-			if np.isnan(newerror):
-				newerror = float('inf')		# possible hotfix for NaN results, please investigate and fix
+			error_list = alg_3(lst)
+			newerror = sum(error_list)/len(error_list)
 			errorsum += newerror
 
 			p["objectives"] = [runtime/fn_count, errorsum/fn_count]
 											# average runtime and error becomes objectives
 		pct = index / (len(pop)-1)
 		print(f"\t[{''.join(['▆' if i/16 < pct else '▁' for i in range(16)])}]", end = '\r')
-		#print(f"   > {f1.__module__}: {index+1} / {len(pop)}                  " , end = '\r')
 	print('                              ', end= '\r')
 
 def random_bitstring(num_bits):
@@ -199,7 +207,12 @@ def crossover(parent1, parent2, rate):
 	'''
 	if np.random.random_sample() >= rate:
 		return ""+parent1
-	child = ""
+
+	if nsga_cross_head_tail:
+		centerpt = np.random.randint(len(parent1))
+		return parent1[:centerpt] + parent2[centerpt:]
+
+	child = ""	# otherwise use random bits method
 	for i in range(len(parent1)):		# get random bits from either parent
 		child += parent1[i] if np.random.random_sample() < 0.5 else parent2[i]
 	return child
@@ -346,14 +359,14 @@ def search(fn_evals, max_gens, pop_size, p_cross):
 	pop = [{"bitstring":random_bitstring(fnbits + nsga_bits_per_param * paramcount)} for i in range(pop_size)]
 
 	print(" > begin initial objectives & sort")
-	calculate_objectives(pop, fn_evals)
+	calculate_measures(pop, fn_evals)
 	fast_nondominated_sort(pop)
 
 	selected = [better(pop[np.random.randint(pop_size)], pop[np.random.randint(pop_size)]) for i in range(pop_size)]
 	children = reproduce(selected, pop_size, p_cross, algbits)
 
 	print(" > objectives of first child pop")
-	calculate_objectives(children, fn_evals)
+	calculate_measures(children, fn_evals)
 	print(" > starting generations")
 
 	for gen in range(max_gens):
@@ -374,8 +387,7 @@ def search(fn_evals, max_gens, pop_size, p_cross):
 		pop = children
 		children = reproduce(selected, pop_size, p_cross, algbits)
 
-		calculate_objectives(children, fn_evals)
-
+		calculate_measures(children, fn_evals)
 		print(f"    > gen = {gen+1} / {max_gens}\tfronts = {len(fronts)}\telapsed={round(time.time()-starting_time, 1)}")
 
 	union = pop + children
@@ -383,18 +395,27 @@ def search(fn_evals, max_gens, pop_size, p_cross):
 	parents = select_parents(fronts, pop_size)
 	return parents
 
-algs = []
-
+algs=[]
 pop = search(nsga_fn_evals, nsga_max_gens, nsga_pop_size, nsga_p_cross)
 print("done!\n")
 
 
 
 # ----------- VISUALIZATION -------------------------------------------------------------------------
-import matplotlib.pyplot as plt, csv
 
 pop.sort(key = lambda x: x["objectives"][0] * (x["objectives"][1]-1))
 
+
+colors = {
+	'bat':		'#020202',
+	'bee':		'#bbaf22',
+	'cuckoo':	'#ec994a',
+	'firefly': 	'#ff0000',
+	'fish':		'#3d7bff',
+	'pollination':'#ff3dff',
+	'pso':		'#3dd6ff',
+	'wolf':		'#e03e3e'
+}
 
 print('\033[4m' + "runtime         error margin    algo    params(algo-specific)" + '\033[0m')
 for p in pop:
@@ -426,12 +447,12 @@ with open('output_populations.csv','w') as csvfile:
 	writer.writerow([f"NSGA GENS: {nsga_max_gens}",f"NSGA POP: {nsga_pop_size}",f"NSGA CROSSOVER: {nsga_p_cross}",f"NSGA AVG EVALS: {nsga_fn_evals}",f"NSGA CROSSBREED: {nsga_cross_breed}"])
 	writer.writerow([f"MODEL: {[x for x in models if models[x]==model][0]}", f"MODEL POP: {model_pop_count}", f"MODEL GENS: {model_generations}"])
 	writer.writerow([])
-	writer.writerow(["algorithm", "runtime", "1+epsilon (error)", "best candidate's model parameters"])
+	writer.writerow(["algorithm", "runtime", "AVG error", "BEST error", "best candidate's model parameters", "score of best"])
 	for p in pop:
 		r, _, _, params = decode(p["bitstring"])
 		rs = r(*params)
 		objs = [model["objective"](x) for x in rs]
 		best = objs.index(min(objs))
-		writer.writerow([r.__module__, p["objectives"][0],p["objectives"][1], rs[best]])
+		writer.writerow([r.__module__, p["objectives"][0],p["objectives"][1], model["objective"](rs[best])/model["result"], rs[best],model["objective"](rs[best])])
 
 plt.show()

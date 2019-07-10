@@ -64,6 +64,14 @@ def RLLCV(x):
 		return float('inf')
 	return cv
 
+
+def Sphere(vector):
+	return np.sum(np.square(vector)) + 1
+
+def Rastr(vec):
+	return 10 + \
+		sum([xi**2 - 10*cos(2*pi*xi) for xi in vec])
+
 #--- EM calculation -----------------------------------------------------------------
 def calcMLEs(x):
     n = len(data)
@@ -91,8 +99,12 @@ def NM(estimates):
     Newton's method
     '''
     bMLEinit, cMLEinit = estimates
-    result = scipy.optimize.newton(calcMLEs,x0=(bMLEinit,cMLEinit), fprime=calcMLEsSecondorder, tol=1e-10, maxiter=10000, full_output=True)
-    return result.root, result.converged
+    try:
+    	result = scipy.optimize.newton(calcMLEs,x0=(bMLEinit,cMLEinit), fprime=calcMLEsSecondorder, tol=1e-10, maxiter=10000, full_output=True)
+    	return result.root, all(result.converged)
+    except RuntimeError:	#scipy throws an error if it fails to converge - catch and shortcircuit
+    	return estimates, False
+
 
 #--- ECM calculation ----------------------------------------------------------------
 def logL(b,c):
@@ -131,12 +143,6 @@ def ECM(estimates):
         converged = False
     return roots, converged
 
-def Sphere(vector):
-	return np.sum(np.square(vector)) + 1
-
-def Rastr(vec):
-	return 10 + \
-			sum([xi**2 - 10*cos(2*pi*xi) for xi in vec])
 
 models = {
 	"Weibull":{

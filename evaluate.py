@@ -13,8 +13,7 @@
 
 import matplotlib.pyplot as plt, csv
 
-import sys, os
-from models import models
+import sys, os, models
 
 sys.path.insert(0, f"algorithms")
 import bat, bee, cuckoo, firefly, fish, pollination, pso, wolf
@@ -30,7 +29,7 @@ nsga_cross_breed = False	# allow algorithms to change during the process
 nsga_free_range = False		# sets all parameter ranges to 0.5 +- 0.5 instead of predefined (needs more gens)
 nsga_cross_head_tail = True	# uses head/tail crossover instead of random bits
 
-model = models[sys.argv[1]]
+model = models.models[sys.argv[1]]
 model_pop_count = 5		# pop size for method
 model_generations = 3		# generations used in method
 
@@ -102,8 +101,7 @@ stage1 = [	#{	"algo":	firefly.search,	#formatted by algorithm then variable para
 				]
 			}]
 stage2 = [lambda x: x]*2	# todo: change phase 1 to phase 2
-stage3 = [lambda lst:[model["objective"](x)/model["result"] for x in lst]]*2
-							# stage 3 calculates margin of error used as stat
+stage3 = [models.NM, models.ECM]*2
 
 #---------------begin NSGA-II---------------------
 
@@ -183,14 +181,26 @@ def calculate_measures(pop, fn_count):
 		errorsum = 0
 		for i in range(fn_count):			# get average of N runs for timing
 			stime = time.time()
-			lst =  alg_1(*params)				# get time of swarm algorithm as well as values for error calc
-			runtime += time.time() - stime
+			lst =  alg_1(*params)				# get time of swarm algorithm
 
+			conv_count = 0
+
+			for est in lst:
+				root, convd = alg_3(est)		# run NM or ECM on estimate
+				print(est, root, convd)
+				if convd:						# TODO: possible conv to local min, investigate
+					conv_count += 1				#		evaluate root score perhaps
+
+			runtime += time.time() - stime
+			errorsum += conv_count / (len(lst) - 1)	# keep track of percentage that converges
+
+			'''	previously used to calculate mean error
 			error_list = alg_3(lst)
 			newerror = sum(error_list)/len(error_list)
 			errorsum += newerror
+			'''
 
-			p["objectives"] = [runtime/fn_count, errorsum/fn_count]
+		p["objectives"] = [runtime/fn_count, errorsum/fn_count]
 											# average runtime and error becomes objectives
 
 		pct = index / (len(pop)-1)	# print out a "progress bar" of the current iteration

@@ -11,6 +11,9 @@
 # TODO - paper; nsga math section
 # TODO - add best error to objectives instead of just average
 
+# TODO - remove NM/ECM from initial metrics
+# TODO - yell at lance, ecm is too damn slow
+
 import matplotlib.pyplot as plt, csv
 
 import sys, os, models
@@ -101,7 +104,7 @@ stage1 = [	#{	"algo":	firefly.search,	#formatted by algorithm then variable para
 				]
 			}]
 stage2 = [lambda x: x]*2	# todo: change phase 1 to phase 2
-stage3 = [models.NM, models.ECM]*2
+stage3 = [models.NM, models.ECM]
 
 #---------------begin NSGA-II---------------------
 
@@ -184,12 +187,18 @@ def calculate_measures(pop, fn_count):
 			lst =  alg_1(*params)				# get time of swarm algorithm
 			runtime += time.time() - stime
 
-			best_estimate = min(lst, key = model['objective'])
+			lst.sort(key = model['objective'])
 
-			result, convd = alg_3(best_estimate)
-
-			# check result score vs wei?
-			errorsum += (model['objective'](result) / model['result'])
+			conv = False
+			for idx, candidate in enumerate(lst):
+				result, convd = alg_3(candidate)
+				print(f"\t\t\t\t\t\t{idx+1} / {len(lst)}         ", end = '\r')
+				if convd and (((model['objective'](result) / model['result']) - 1) < 10**-10):
+					conv = True
+					break
+			errorsum += int(not conv)
+											# change metric to possible "confidence" in converged pt? (percent converged to point vs total) 
+			# check result score vs wei?	# ASK about what metric should be
 			
 			'''	previously used to calculate mean error
 			error_list = alg_3(lst)

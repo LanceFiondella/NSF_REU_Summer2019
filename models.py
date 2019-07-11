@@ -100,11 +100,14 @@ def NM(estimates):
 	'''
 	Newton's method
 	'''
+	ts = time.time()
 	bMLEinit, cMLEinit = estimates
 	try:
 		result = scipy.optimize.newton(calcMLEs,x0=(bMLEinit,cMLEinit), fprime=calcMLEsSecondorder, tol=1e-10, maxiter=10000, full_output=True)
+		#print(time.time() - ts)
 		return result.root, all(result.converged)
 	except RuntimeError:	#scipy throws an error if it fails to converge - catch and shortcircuit
+		#print(time.time() - ts)
 		return estimates, False
 
 
@@ -128,21 +131,27 @@ def cMLE(c, b):
 	return -aMLE*b*np.power(tn,c)*np.log(tn)*np.exp(-b*np.power(tn,c)) + (n/c) + sum(np.log(data)-b*np.log(data)*np.power(data,c))
 
 def ECM(estimates):
+	ts = time.time()
 	b_est, c_est = estimates                            # initial passed estimates for b and c
 	ll_list = [logL(b_est, c_est), logL(b_est, c_est)]  # used to compare current error to previous error in loop
 	ll_error = 1                                        # initial error
 	tolerance = 1e-10
-	while (ll_error > tolerance):
+	iterations = 0
+	while (ll_error > tolerance) and (iterations < 100):
 		b_est = scipy.optimize.fsolve(bMLE, x0 = b_est, args=(c_est))   # solve for b using c estimate
 		c_est = scipy.optimize.fsolve(cMLE, x0 = c_est, args=(b_est))   # solve for c using b estimate
 		ll_list[1] = (logL(b_est, c_est))   # log likelihood of new estimates
 		ll_error = ll_list[1] - ll_list[0]  # calculate ll error, new ll - old ll
 		ll_list[0] = ll_list[1]             # calculated ll becomes old ll for next iteration
+		iterations += 1
 	roots = np.array([b_est[0], c_est[0]])
-	if (RLLWei(roots) / models["Weibull"]["result"] <= tolerance + 1):
+	if (RLLWei(roots) / models["Weibull"]["result"] <= tolerance + 1) and (iterations < 100):
 		converged = True
 	else:
+		#if iterations == 100:
+			#print('eeeeeee')
 		converged = False
+	#print(time.time() - ts, "ECM")
 	return roots, converged
 
 

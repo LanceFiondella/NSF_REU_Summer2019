@@ -30,8 +30,8 @@ nsga_free_range = False		# sets all parameter ranges to 0.5 +- 0.5 instead of pr
 nsga_cross_head_tail = True	# uses head/tail crossover instead of random bits
 
 model = models.models[sys.argv[1]]
-model_pop_count = 5		# pop size for method
-model_generations = 3		# generations used in method
+model_pop_count = [16, 6]		# pop size for method
+model_generations = 5		# generations used in method
 
 
 stage1 = [	#{	"algo":	firefly.search,	#formatted by algorithm then variable parameters base +- diff
@@ -121,8 +121,8 @@ def search(fn_evals, max_gens, pop_size, p_cross):
 	algbits = int(np.ceil(np.log2(len(stage1))))
 	fnbits = int(np.ceil(np.log2(len(stage1))) + np.ceil(np.log2(len(stage2))) + np.ceil(np.log2(len(stage3))))
 						# calculate total bits used for picking fn
-	pop = [{"bitstring":random_bitstring(fnbits + nsga_bits_per_param * paramcount)} for i in range(pop_size)]
-
+	pop = [{"bitstring":random_bitstring(fnbits + nsga_bits_per_param * (1 + paramcount))} for i in range(pop_size)]
+						# add one to paramcount for popsize
 	print(" > begin initial objectives & sort")
 	calculate_measures(pop, fn_evals)
 	fast_nondominated_sort(pop)
@@ -182,29 +182,27 @@ def calculate_measures(pop, fn_count):
 		for i in range(fn_count):			# get average of N runs for timing
 			stime = time.time()
 			lst =  alg_1(*params)				# get time of swarm algorithm
-
-			conv_count = 0
-
-			for est in lst:
-				root, convd = alg_3(est)		# run NM or ECM on estimate
-				print(est, root, convd)
-				if convd:						# TODO: possible conv to local min, investigate
-					conv_count += 1				#		evaluate root score perhaps
-
 			runtime += time.time() - stime
-			errorsum += conv_count / (len(lst) - 1)	# keep track of percentage that converges
 
+			best_estimate = min(lst, key = model['objective'])
+
+			result, convd = alg_3(best_estimate)
+
+			# check result score vs wei?
+			errorsum += (model['objective'](result) / model['result'])
+			
 			'''	previously used to calculate mean error
 			error_list = alg_3(lst)
 			newerror = sum(error_list)/len(error_list)
 			errorsum += newerror
 			'''
 
-		p["objectives"] = [runtime/fn_count, errorsum/fn_count]
+			p["objectives"] = [runtime/fn_count, errorsum/fn_count]
 											# average runtime and error becomes objectives
 
-		pct = index / (len(pop)-1)	# print out a "progress bar" of the current iteration
-		print(f"\t[{''.join(['▆' if i/16 < pct else '▁' for i in range(16)])}]", end = '\r')
+		#pct = index / (len(pop)-1)	# print out a "progress bar" of the current iteration
+		print(f"       > {alg_1.__module__}: {index+1} / {len(pop)}          ", end='\r')
+		#print(f"\t[{''.join(['▆' if i/16 < pct else '▁' for i in range(16)])}]", end = '\r')
 	print('                              ', end= '\r')
 
 
@@ -216,30 +214,36 @@ def decode(bitstring):
 	'''
 	model_objective = model["objective"]				# get specific parameters for model
 	model_search_space = [model["search_space"] for i in range(model["dimensions"])]
-	model_init_pop = [									# generate population, pseudorandom
-		[t[0] + t[1]*np.random.uniform()*np.sign(np.random.uniform()-0.5) for t in model["estimates"]]
-		for x in range(model_pop_count)]
-														# turn params into tuple
-	params = (model_objective, model_search_space, model_generations, model_init_pop, model_pop_count)
-
+													# turn params into tuple
 	s1, s2, s3 = int(np.ceil(np.log2(len(stage1)))), int(np.ceil(np.log2(len(stage2)))), int(np.ceil(np.log2(len(stage3))))
 	i1 = int(bitstring[0:s1], 2) % len(stage1)			# get bits for each stage in bitstring
 	i2 = int(bitstring[s1:s1+s2], 2) % len(stage2)
 	i3 = int(bitstring[s1+s2:s1+s2+s3], 2) % len(stage3)
 
-	param_bits = bitstring[s1+s2+s3:]					# separate bits for variables
+	pop_bits = bitstring[s1+s2+s3:][:nsga_bits_per_param]
+	pop_size = round(binary_float_signum(pop_bits, model_pop_count[0], model_pop_count[1]))
+	model_init_pop = [									# generate population, pseudorandom
+		[t[0] + t[1]*np.random.uniform()*np.sign(np.random.uniform()-0.5) for t in model["estimates"]]
+			for x in range(pop_size)]
+
+	params = (model_objective, model_search_space, model_generations, model_init_pop, pop_size)
+
+	param_bits = bitstring[s1+s2+s3+len(pop_bits):]					# separate bits for variables
 	for idx, prm in enumerate(stage1[i1]["params"]):
 		this_bits = param_bits[idx * nsga_bits_per_param :][:nsga_bits_per_param]	# get part of bitstring corresponding to parameter
 
-		rng = int(this_bits, 2) / (2 ** nsga_bits_per_param - 1)		# get range of 0-1 that 000... -> 111... is
-		diff = 2 * rng - 1								# transform it from -1 <-> 1
 		if nsga_free_range:
-			params += (0.5 + 0.5*diff,)				# append param +- diff to list of parameters
+			params += (binary_float_signum(this_bits, 0.5, 0.5),)
 		else:
-			params += (prm[0] + prm[1]*diff,)
+			params += (binary_float_signum(this_bits, prm[0], prm[1]),)
 
 	return stage1[i1]["algo"], stage2[i2], stage3[i3], params 	# send back algorithms & parameters for timing
 
+
+def binary_float_signum(bitstring, lmbda, mu):
+	uniform = int(bitstring, 2) / (2 ** nsga_bits_per_param - 1)
+	uniform = 2 * uniform - 1
+	return lmbda + uniform * mu
 
 def fast_nondominated_sort(pop):
 	'''
@@ -416,7 +420,7 @@ print("done!\n")
 
 # ----------- VISUALIZATION -------------------------------------------------------------------------
 
-pop.sort(key = lambda x: x["objectives"][0] * (x["objectives"][1]-1))
+pop.sort(key = lambda x: x["objectives"][0] * (x["objectives"][1]))
 
 colors = {
 	'bat':		'#020202',

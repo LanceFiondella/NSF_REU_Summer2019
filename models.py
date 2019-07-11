@@ -74,74 +74,76 @@ def Rastr(vec):
 
 #--- EM calculation -----------------------------------------------------------------
 def calcMLEs(x):
-    n = len(data)
-    tn = data[n-1] 
-    b, c = x 
-    aMLE = n/ (1 - np.exp(-b * np.power(tn,c)))
-    bHat = -aMLE*np.power(tn,c)*np.exp(-b *np.power(tn,c))+ sum((1-b*np.power(data,c))/(b))
-    cHat = -aMLE*b*np.power(tn,c)*np.log(tn)*np.exp(-b*np.power(tn,c)) + (n/c) + sum(np.log(data)-b*np.log(data)*np.power(data,c))
-    return [bHat, cHat]
+	n = len(data)
+	tn = data[n-1] 
+	b, c = x 
+	aMLE = n / (1 - np.exp(-b * np.power(tn,c)))
+	bHat = -aMLE*np.power(tn,c)*np.exp(-b *np.power(tn,c))+ sum((1-b*np.power(data,c))/(b))
+	cHat = -aMLE*b*np.power(tn,c)*np.log(tn)*np.exp(-b*np.power(tn,c)) + (n/c) + sum(np.log(data)-b*np.log(data)*np.power(data,c))
+	if np.isnan(bHat) or np.isnan(cHat):
+		return [b, c]
+	return [bHat, cHat]
 
 def calcMLEsSecondorder(x): #Verified so be sure to use this code throughout
-    n = len(data)
-    tn = data[n-1] 
-    b, c = x 
-    aMLE = n/ (1 - np.exp(-b * np.power(tn,c)))
-    bHat2 = -(n/np.power(b,2)) + ((np.exp(b*np.power(tn,c))*n*np.power(tn,2*c))/(np.power((1-np.exp(b*np.power(tn,c))),2)))
-    cFirstTerm = aMLE*b*np.power(tn,c)*np.exp(-b*np.power(tn,c))*(-1+b*np.power(tn,c))*np.power(np.log(tn),2)
-    cSecondTerm = -n/np.power(c,2)
-    cThirdTerm = np.sum(-b*np.power(np.log(data),2)*np.power(data,c))
-    cHat2 = cFirstTerm + cSecondTerm +cThirdTerm
-    return [bHat2, cHat2]
+	n = len(data)
+	tn = data[n-1] 
+	b, c = x 
+	aMLE = n / (1 - np.exp(-b * np.power(tn,c)))
+	bHat2 = -(n/np.power(b,2)) + ((np.exp(b*np.power(tn,c))*n*np.power(tn,2*c))/(np.power((1-np.exp(b*np.power(tn,c))),2)))
+	cFirstTerm = aMLE*b*np.power(tn,c)*np.exp(-b*np.power(tn,c))*(-1+b*np.power(tn,c))*np.power(np.log(tn),2)
+	cSecondTerm = -n/np.power(c,2)
+	cThirdTerm = np.sum(-b*np.power(np.log(data),2)*np.power(data,c))
+	cHat2 = cFirstTerm + cSecondTerm +cThirdTerm
+	return [bHat2, cHat2]
 
 def NM(estimates):
-    '''
-    Newton's method
-    '''
-    bMLEinit, cMLEinit = estimates
-    try:
-    	result = scipy.optimize.newton(calcMLEs,x0=(bMLEinit,cMLEinit), fprime=calcMLEsSecondorder, tol=1e-10, maxiter=10000, full_output=True)
-    	return result.root, all(result.converged)
-    except RuntimeError:	#scipy throws an error if it fails to converge - catch and shortcircuit
-    	return estimates, False
+	'''
+	Newton's method
+	'''
+	bMLEinit, cMLEinit = estimates
+	try:
+		result = scipy.optimize.newton(calcMLEs,x0=(bMLEinit,cMLEinit), fprime=calcMLEsSecondorder, tol=1e-10, maxiter=10000, full_output=True)
+		return result.root, all(result.converged)
+	except RuntimeError:	#scipy throws an error if it fails to converge - catch and shortcircuit
+		return estimates, False
 
 
 #--- ECM calculation ----------------------------------------------------------------
 def logL(b,c):
-    n = len(data)
-    tn = data[n-1]
-    aHat = n / (1-np.exp(-b*(tn**c)))
-    return (-n +sum(np.log(aHat*b*c*np.power(data,(c-1))*np.exp(-b*np.power(data,c)))))
+	n = len(data)
+	tn = data[n-1]
+	aHat = n / (1-np.exp(-b*(tn**c)))
+	return (-n +sum(np.log(aHat*b*c*np.power(data,(c-1))*np.exp(-b*np.power(data,c)))))
 
 def bMLE(b, c):
-    n = len(data)
-    tn = data[n-1]
-    aMLE = n/ (1 - np.exp(-b * np.power(tn,c)))
-    return -aMLE*np.power(tn,c)*np.exp(-b *np.power(tn,c))+ sum((1-b*np.power(data,c))/(b))
+	n = len(data)
+	tn = data[n-1]
+	aMLE = n/ (1 - np.exp(-b * np.power(tn,c)))
+	return -aMLE*np.power(tn,c)*np.exp(-b *np.power(tn,c))+ sum((1-b*np.power(data,c))/(b))
 
 def cMLE(c, b):
-    n = len(data)
-    tn = data[n-1]
-    aMLE = n/ (1 - np.exp(-b * np.power(tn,c)))
-    return -aMLE*b*np.power(tn,c)*np.log(tn)*np.exp(-b*np.power(tn,c)) + (n/c) + sum(np.log(data)-b*np.log(data)*np.power(data,c))
+	n = len(data)
+	tn = data[n-1]
+	aMLE = n/ (1 - np.exp(-b * np.power(tn,c)))
+	return -aMLE*b*np.power(tn,c)*np.log(tn)*np.exp(-b*np.power(tn,c)) + (n/c) + sum(np.log(data)-b*np.log(data)*np.power(data,c))
 
 def ECM(estimates):
-    b_est, c_est = estimates                            # initial passed estimates for b and c
-    ll_list = [logL(b_est, c_est), logL(b_est, c_est)]  # used to compare current error to previous error in loop
-    ll_error = 1                                        # initial error
-    tolerance = 1e-10
-    while (ll_error > tolerance):
-        b_est = scipy.optimize.fsolve(bMLE, x0 = b_est, args=(c_est))   # solve for b using c estimate
-        c_est = scipy.optimize.fsolve(cMLE, x0 = c_est, args=(b_est))   # solve for c using b estimate
-        ll_list[1] = (logL(b_est, c_est))   # log likelihood of new estimates
-        ll_error = ll_list[1] - ll_list[0]  # calculate ll error, new ll - old ll
-        ll_list[0] = ll_list[1]             # calculated ll becomes old ll for next iteration
-    roots = np.array([b_est[0], c_est[0]])
-    if (RLLWei(roots) / models["Weibull"]["result"] <= tolerance + 1):
-        converged = True
-    else:
-        converged = False
-    return roots, converged
+	b_est, c_est = estimates                            # initial passed estimates for b and c
+	ll_list = [logL(b_est, c_est), logL(b_est, c_est)]  # used to compare current error to previous error in loop
+	ll_error = 1                                        # initial error
+	tolerance = 1e-10
+	while (ll_error > tolerance):
+		b_est = scipy.optimize.fsolve(bMLE, x0 = b_est, args=(c_est))   # solve for b using c estimate
+		c_est = scipy.optimize.fsolve(cMLE, x0 = c_est, args=(b_est))   # solve for c using b estimate
+		ll_list[1] = (logL(b_est, c_est))   # log likelihood of new estimates
+		ll_error = ll_list[1] - ll_list[0]  # calculate ll error, new ll - old ll
+		ll_list[0] = ll_list[1]             # calculated ll becomes old ll for next iteration
+	roots = np.array([b_est[0], c_est[0]])
+	if (RLLWei(roots) / models["Weibull"]["result"] <= tolerance + 1):
+		converged = True
+	else:
+		converged = False
+	return roots, converged
 
 
 models = {
@@ -184,15 +186,15 @@ models = {
 }
 
 if __name__ == "__main__":
-    #print(RLLWei([404/1000000, 1]))
-    root, converged = NM([1.00000000e-06, 4.96929036e-01])
-    print("-- NM --")
-    print(root)
-    print(RLLWei(root))
-    print(converged)
-    print("-- ECM --")
-    # ecm_root, ecm_converged = ECM([2.0, 2.0])
-    ecm_root, ecm_converged = ECM([1.00000000e-06, 8.66658832e-02])
-    print(ecm_root)
-    print(RLLWei(ecm_root))
-    print(ecm_converged)
+	#print(RLLWei([404/1000000, 1]))
+	root, converged = NM([1.00000000e-06, 4.96929036e-01])
+	print("-- NM --")
+	print(root)
+	print(RLLWei(root))
+	print(converged)
+	print("-- ECM --")
+	# ecm_root, ecm_converged = ECM([2.0, 2.0])
+	ecm_root, ecm_converged = ECM([1.00000000e-06, 8.66658832e-02])
+	print(ecm_root)
+	print(RLLWei(ecm_root))
+	print(ecm_converged)

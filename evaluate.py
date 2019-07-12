@@ -1,6 +1,3 @@
-# TODO - run cross-validation on other datasets after finding final convergent model parameters
-# TODO - add population and generations to bitstring parameters?
-# TODO - ADD NM/ECM runtime counting, maybe turn into single objective problem at some point (runtime)
 # TODO - histogram of all fn runtimes, "hills" should approach left at some point
 # TODO - firefly - check wei 'b' param - range too wide may be causing numbers to be NaN/inf
 # TODO - document variable ranges
@@ -9,6 +6,7 @@
 # TODO - paper; nsga math section
 
 # TODO - separate each model in file into model folder
+# TODO - multithread swarm algorithms in each nsga gen
 
 import matplotlib.pyplot as plt, csv
 import sys, os, models

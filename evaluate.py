@@ -16,10 +16,10 @@ import bat, bee, cuckoo, firefly, fish, pollination, pso, wolf
 
 #---- NSGA SETTINGS ------------------------------
 
-nsga_max_gens = 32				# number of generations in NSGA-II
-nsga_pop_size = 32 				# how many combinations there are, must be even
+nsga_max_gens = 16				# number of generations in NSGA-II
+nsga_pop_size = 64 				# how many combinations there are, must be even
 nsga_p_cross = 0.98				# mutation crossover probability
-nsga_fn_evals = 3				# how many evaluations to average
+nsga_fn_evals = 1				# how many evaluations to average
 nsga_bpp = 16 					# bits / precision to use for each parameter
 nsga_cross_breed = False		# allow algorithms to change during the process
 nsga_free_range = False			# sets all parameter ranges to 0.5 +- 0.5 instead of predefined (needs more gens)
@@ -184,12 +184,13 @@ def calculate_measures(pop):
 		for i in range(nsga_fn_evals):		# get average of N runs
 			stime = time.time()
 			lst =  alg_2(*params)			# get time of swarm algorithm
-			runtime += time.time() - stime
 
 			candidate = min(lst, key = model['objective'])
 											# get most-fit particle, check if it converges
 
 			result, conv = alg_3(candidate)
+
+			runtime += time.time() - stime
 			error += int(not conv)			# minimizing divergence
 			
 		p["objectives"] = [runtime/nsga_fn_evals, error/nsga_fn_evals]

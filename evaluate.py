@@ -3,14 +3,12 @@
 # TODO - ADD NM/ECM runtime counting, maybe turn into single objective problem at some point (runtime)
 # TODO - histogram of all fn runtimes, "hills" should approach left at some point
 # TODO - firefly - check wei 'b' param - range too wide may be causing numbers to be NaN/inf
-# TODO - improve variable readibility (naming)
-# TODO - re-order functions for readability
 # TODO - document variable ranges
 # TODO - check if converged uses endpoints of ranges (perhaps to increase ranges)
 # TODO - explore variants of best ones (bee, bat, pso, etc)
 # TODO - paper; nsga math section
 
-# TODO - use bitstring to get range for swarm algo rather than pure int value
+# TODO - separate each model in file into model folder
 
 import matplotlib.pyplot as plt, csv
 import sys, os, models
@@ -447,7 +445,7 @@ print("done!\n")
 
 # ----------- VISUALIZATION -------------------------------------------------------------------------
 
-pop.sort(key = lambda x: x["objectives"][0] * x["objectives"][1])
+pop.sort(key = lambda x: x["objectives"][0] + x["objectives"][1])
 
 colors = {
 	'bat':		'#020202',
@@ -460,14 +458,14 @@ colors = {
 	'wolf':		'#e03e3e'
 }
 
-print('\033[4m' + "runtime         conv    algo    gens    pop         params(algo-specific)" + '\033[0m')
+print('\033[4m' + "runtime         conv    algo    nm/ecm  gens    pop         params(algo-specific)" + '\033[0m')
 for p in pop:
 	r, r2, r3, params = decode(p["bitstring"])
 	n = r2.__module__
 	c = colors[n]
 
 	print('\t'.join([str(round(x,8)) for x in p["objectives"]]).zfill(10), end="\t")
-	print(f"{n}\t{params[2]}\t{params[4]}", end="\t")
+	print(f"{n}\t{r3.__name__}\t{params[2]}\t{params[4]}", end="\t")
 
 	for i in params[5:]:
 		print(round(i,3), end="\t")
@@ -490,12 +488,12 @@ with open('output_populations.csv','w') as csvfile:
 	writer.writerow([f"NSGA GENS: {nsga_max_gens}",f"NSGA POP: {nsga_pop_size}",f"NSGA CROSSOVER: {nsga_p_cross}",f"NSGA AVG EVALS: {nsga_fn_evals}",f"NSGA CROSSBREED: {nsga_cross_breed}"])
 	writer.writerow([f"MODEL: {[x for x in models.models if models.models[x]==model][0]}", f"MODEL POP: {model_pop_count}", f"MODEL GENS: {model_generations}"])
 	writer.writerow([])
-	writer.writerow(["algorithm", "runtime", "AVG error", "BEST error", "best candidate's model parameters", "score of best"])
+	writer.writerow(["algorithm", "NM/ECM", "runtime", "AVG error", "BEST error", "best candidate's model parameters", "score of best"])
 	for p in pop:
 		r, _, _, params = decode(p["bitstring"])
-		rs = r(*params)
+		rs = r2(*params)
 		objs = [model["objective"](x) for x in rs]
 		best = objs.index(min(objs))
-		writer.writerow([r.__module__, p["objectives"][0],p["objectives"][1], model["objective"](rs[best])/model["result"], rs[best],model["objective"](rs[best])])
+		writer.writerow([r2.__module__, r3.__name__, p["objectives"][0],p["objectives"][1], model["objective"](rs[best])/model["result"], rs[best],model["objective"](rs[best])])
 
 plt.show()

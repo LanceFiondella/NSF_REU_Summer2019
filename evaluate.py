@@ -9,10 +9,11 @@
 # TODO - check if converged uses endpoints of ranges (perhaps to increase ranges)
 # TODO - explore variants of best ones (bee, bat, pso, etc)
 # TODO - paper; nsga math section
-# TODO - add best error to objectives instead of just average
 
 # TODO - remove NM/ECM from initial metrics
 # TODO - yell at lance, ecm is too damn slow
+
+# TODO - make NM/ECM wei/cv specific
 
 import matplotlib.pyplot as plt, csv
 
@@ -23,18 +24,18 @@ import bat, bee, cuckoo, firefly, fish, pollination, pso, wolf
 
 #---- NSGA SETTINGS ------------------------------
 
-nsga_max_gens = 16			# number of generations in NSGA-II
-nsga_pop_size = 64 			# how many combinations there are, must be even
+nsga_max_gens = 32			# number of generations in NSGA-II
+nsga_pop_size = 32 			# how many combinations there are, must be even
 nsga_p_cross = 0.98			# mutation crossover probability
-nsga_fn_evals = 8			# how many evaluations to average
+nsga_fn_evals = 3			# how many evaluations to average
 nsga_bits_per_param = 16 	# bits / precision to use for each parameter
 nsga_cross_breed = False	# allow algorithms to change during the process
 nsga_free_range = False		# sets all parameter ranges to 0.5 +- 0.5 instead of predefined (needs more gens)
 nsga_cross_head_tail = True	# uses head/tail crossover instead of random bits
 
 model = models.models[sys.argv[1]]
-model_pop_count = [16, 6]		# pop size for method
-model_generations = 5		# generations used in method
+model_pop_count = [16, 10]		# pop size for method
+model_generations = [12, 10]		# generations used in method
 
 
 stage1 = [	#{	"algo":	firefly.search,	#formatted by algorithm then variable parameters base +- diff
@@ -121,17 +122,17 @@ def search(fn_evals, max_gens, pop_size, p_cross):
 	starting_time = time.time()
 	paramcount = len(max(stage1, key = lambda x: len(x["params"]))["params"])
 
-	algbits = int(np.ceil(np.log2(len(stage1))))
-	fnbits = int(np.ceil(np.log2(len(stage1))) + np.ceil(np.log2(len(stage2))) + np.ceil(np.log2(len(stage3))))
+	s1_bit_count = int(np.ceil(np.log2(len(stage1))))
+	total_bit_count = int(np.ceil(np.log2(len(stage1))) + np.ceil(np.log2(len(stage2))) + np.ceil(np.log2(len(stage3))))
 						# calculate total bits used for picking fn
-	pop = [{"bitstring":random_bitstring(fnbits + nsga_bits_per_param * (1 + paramcount))} for i in range(pop_size)]
-						# add one to paramcount for popsize
+	pop = [{"bitstring":random_bitstring(total_bit_count + nsga_bits_per_param * (2 + paramcount))} for i in range(pop_size)]
+						# add one to paramcount for popsize, for gen count
 	print(" > begin initial objectives & sort")
 	calculate_measures(pop, fn_evals)
 	fast_nondominated_sort(pop)
 
 	selected = [better(pop[np.random.randint(pop_size)], pop[np.random.randint(pop_size)]) for i in range(pop_size)]
-	children = reproduce(selected, pop_size, p_cross, algbits)
+	children = reproduce(selected, pop_size, p_cross, s1_bit_count)
 
 	print(" > objectives of first child pop")
 	calculate_measures(children, fn_evals)
@@ -153,7 +154,7 @@ def search(fn_evals, max_gens, pop_size, p_cross):
 
 		selected = [better(parents[np.random.randint(pop_size)], parents[np.random.randint(pop_size)]) for i in range(pop_size)]
 		pop = children
-		children = reproduce(selected, pop_size, p_cross, algbits)
+		children = reproduce(selected, pop_size, p_cross, s1_bit_count)
 
 		calculate_measures(children, fn_evals)
 		print(f"    > gen = {gen+1} / {max_gens}\tfronts = {len(fronts)}\telapsed={round(time.time()-starting_time, 1)}")
@@ -196,7 +197,7 @@ def calculate_measures(pop, fn_count):
 				if convd and (((model['objective'](result) / model['result']) - 1) < 10**-10):
 					conv = True
 					break
-			errorsum += int(not conv)
+			errorsum += int(not conv)		# this property is MINIMIZED, therefore we want good results to be 0
 											# change metric to possible "confidence" in converged pt? (percent converged to point vs total) 
 			# check result score vs wei?	# ASK about what metric should be
 			
@@ -229,13 +230,15 @@ def decode(bitstring):
 	i2 = int(bitstring[s1:s1+s2], 2) % len(stage2)
 	i3 = int(bitstring[s1+s2:s1+s2+s3], 2) % len(stage3)
 
-	pop_bits = bitstring[s1+s2+s3:][:nsga_bits_per_param]
-	pop_size = round(binary_float_signum(pop_bits, model_pop_count[0], model_pop_count[1]))
+	pop_bits = bitstring[s1+s2+s3:][:nsga_bits_per_param*2]
+	pop_size = round(binary_float_signum(pop_bits[:nsga_bits_per_param], model_pop_count[0], model_pop_count[1]))
+	gen_count = round(binary_float_signum(pop_bits[nsga_bits_per_param:], model_generations[0], model_generations[1]))
+
 	model_init_pop = [									# generate population, pseudorandom
 		[t[0] + t[1]*np.random.uniform()*np.sign(np.random.uniform()-0.5) for t in model["estimates"]]
 			for x in range(pop_size)]
 
-	params = (model_objective, model_search_space, model_generations, model_init_pop, pop_size)
+	params = (model_objective, model_search_space, gen_count, model_init_pop, pop_size)
 
 	param_bits = bitstring[s1+s2+s3+len(pop_bits):]					# separate bits for variables
 	for idx, prm in enumerate(stage1[i1]["params"]):
@@ -304,14 +307,14 @@ def point_mutation(bitstring, rate=None):
 	(flips bits at random) - will not change the
 	algorithm-choice bits if not enabled
 	'''
-	fnbits = int(np.ceil(np.log2(len(stage1))))
+	s1_bit_count = int(np.ceil(np.log2(len(stage1))))
 
 	if rate == None:					# flip bits at random according to rate
 		rate = 1/len(bitstring)
 	child = ""
 	for i in range(len(bitstring)):
 		bit = bitstring[i]				# only change fn bits if crossbreed is enable
-		if nsga_cross_breed or (i > fnbits):
+		if nsga_cross_breed or (i > s1_bit_count):
 			child += str(1-int(bit)) if (np.random.random_sample()<rate) else bit
 		else:
 			child += bit
@@ -442,14 +445,14 @@ colors = {
 	'wolf':		'#e03e3e'
 }
 
-print('\033[4m' + "runtime         error margin    algo    params(algo-specific)" + '\033[0m')
+print('\033[4m' + "runtime         conv    algo    gens    pop         params(algo-specific)" + '\033[0m')
 for p in pop:
 	r, r2, r3, params = decode(p["bitstring"])
 	n = r.__module__
 	c = colors[n]
 
 	print('\t'.join([str(round(x,8)) for x in p["objectives"]]).zfill(10), end="\t")
-	print(n, end="\t")
+	print(f"{n}\t{params[2]}\t{params[4]}", end="\t")
 
 	for i in params[5:]:
 		print(round(i,3), end="\t")

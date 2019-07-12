@@ -136,8 +136,10 @@ def ECM(estimates):
 	ll_list = [logL(b_est, c_est), logL(b_est, c_est)]  # used to compare current error to previous error in loop
 	ll_error = 1                                        # initial error
 	tolerance = 1e-10
+	max_iterations = 1000
+
 	iterations = 0
-	while (ll_error > tolerance) and (iterations < 100):
+	while (ll_error > tolerance) and (iterations < max_iterations):
 		b_est = scipy.optimize.fsolve(bMLE, x0 = b_est, args=(c_est))   # solve for b using c estimate
 		c_est = scipy.optimize.fsolve(cMLE, x0 = c_est, args=(b_est))   # solve for c using b estimate
 		ll_list[1] = (logL(b_est, c_est))   # log likelihood of new estimates
@@ -145,7 +147,7 @@ def ECM(estimates):
 		ll_list[0] = ll_list[1]             # calculated ll becomes old ll for next iteration
 		iterations += 1
 	roots = np.array([b_est[0], c_est[0]])
-	if (RLLWei(roots) / models["Weibull"]["result"] <= tolerance + 1) and (iterations < 100):
+	if (RLLWei(roots) / models["Weibull"]["result"] <= tolerance + 1) and (iterations < max_iterations):
 		converged = True
 	else:
 		#if iterations == 100:

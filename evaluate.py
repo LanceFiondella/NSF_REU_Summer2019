@@ -21,7 +21,7 @@ nsga_pop_size = 64 				# how many combinations there are, must be even
 nsga_p_cross = 0.98				# mutation crossover probability
 nsga_fn_evals = 1				# how many evaluations to average
 nsga_bpp = 16 					# bits / precision to use for each parameter
-nsga_cross_breed = False		# allow algorithms to change during the process
+nsga_cross_breed = False			# allow algorithms to change during the process
 nsga_free_range = False			# sets all parameter ranges to 0.5 +- 0.5 instead of predefined (needs more gens)
 nsga_cross_head_tail = True		# uses head/tail crossover instead of random bits
 
@@ -191,7 +191,8 @@ def calculate_measures(pop):
 			result, conv = alg_3(candidate)
 
 			runtime += time.time() - stime
-			error += int(not conv)			# minimizing divergence
+
+			error += (model['objective'](candidate) / model['result'])
 			
 		p["objectives"] = [runtime/nsga_fn_evals, error/nsga_fn_evals]
 
@@ -489,10 +490,11 @@ with open('output_populations.csv','w') as csvfile:
 	writer.writerow([])
 	writer.writerow(["algorithm", "NM/ECM", "runtime", "AVG error", "BEST error", "best candidate's model parameters", "score of best"])
 	for p in pop:
-		r, _, _, params = decode(p["bitstring"])
-		rs = r2(*params)
-		objs = [model["objective"](x) for x in rs]
-		best = objs.index(min(objs))
-		writer.writerow([r2.__module__, r3.__name__, p["objectives"][0],p["objectives"][1], model["objective"](rs[best])/model["result"], rs[best],model["objective"](rs[best])])
+		r, r2, r3, params = decode(p["bitstring"])
+		newl = r2(*params)
+		bst = min(newl, key = model['objective'])
+		rs, con = r3(bst)
+		sc = model['objective'](rs) / model['result']
+		writer.writerow([r2.__module__, r3.__name__, p["objectives"][0],p["objectives"][1], sc, rs, model["objective"](rs)])
 
 plt.show()

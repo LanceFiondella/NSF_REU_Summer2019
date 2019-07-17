@@ -96,7 +96,7 @@ def init_passed_population(population, pop_size, problem_size, freq_min, freq_ma
 		pop[i]["fitness"] = objective(pop[i]["position"])
 	return pop
 
-def search(objective, search_space, max_generations, population, population_count, 
+def search(objective, search_space, max_generations, population, 
 		   freq_min=0.0, freq_max=1.0, alpha=0.9, gamma=0.9):
 	"""Performs bat algorithm search for a global minimum of passed objective function.
 
@@ -116,6 +116,7 @@ def search(objective, search_space, max_generations, population, population_coun
 	problem_size = len(search_space)    # search space provides bounds for each dimension of problem,
 										# length of this list provides number of dimensions
 	# initialize bat population using passed population
+	population_count = len(population)
 	bats = init_passed_population(population, population_count, problem_size, freq_min, freq_max, objective)
 	new_position = np.array([0]*problem_size)     # list to hold created candidate solutions
 	best = min(bats, key=lambda x:x["fitness"]).copy()         # store intial best bat, based on lowest fitness

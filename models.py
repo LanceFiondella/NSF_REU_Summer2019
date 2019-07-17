@@ -34,13 +34,15 @@ CVec = np.array([0.5, 2.8, 1, 0.5, 0.5, 1, 0.5, 2.5, 3.0, 3.0, 6, 4, 4, 1])
 def RLLCV(x):
 	n = len(kVec)
 	b, b1, b2, b3 = x
-	
 	second = []
 	prodlist = []
 	for i in range(n):
 		sum1=1
 		sum2=1
-		sum1=1-((1-b)**(exp(EVec[i]*b1)*exp(FVec[i]*b2)*exp(CVec[i]*b3)))
+		try:
+			sum1=1-((1-b)**(exp(EVec[i]*b1)*exp(FVec[i]*b2)*exp(CVec[i]*b3)))
+		except OverflowError:
+			return float('inf')
 		for k in range(i):
 			sum2 = sum2*((1-b)**(exp(EVec[k]*b1)*exp(FVec[k]*b2)*exp(CVec[k]*b3)))
 		second.append(sum2)
@@ -156,6 +158,45 @@ def ECM(estimates):
 	#print(time.time() - ts, "ECM")
 	return roots, converged
 
+def nelder_mead(x):
+	r = scipy.optimize.minimize(RLLCV, x, method='Nelder-Mead', tol=1e-10, options={'maxiter':100})
+	return r.x, r.success
+
+def powell(x):
+	r = scipy.optimize.minimize(RLLCV, x, method='Powell', tol=1e-10, options={'maxiter':100})
+	return r.x, r.success
+
+def cg(x):
+	r = scipy.optimize.minimize(RLLCV, x, method='CG', tol=1e-10, options={'maxiter':100})
+	return r.x, r.success
+
+def bfgs(x):
+	r = scipy.optimize.minimize(RLLCV, x, method='BFGS', tol=1e-10, options={'maxiter':100})
+	return r.x, r.success
+
+def lbfgsb(x):
+	r = scipy.optimize.minimize(RLLCV, x, method='L-BFGS-B', tol=1e-10, options={'maxiter':100})
+	return r.x, r.success
+
+def tnc(x):
+	r = scipy.optimize.minimize(RLLCV, x, method='TNC', tol=1e-10, options={'maxiter':100})
+	return r.x, r.success
+
+def cobyla(x):
+	r = scipy.optimize.minimize(RLLCV, x, method='COBYLA', tol=1e-10, options={'maxiter':100})
+	return r.x, r.success
+
+def slsqp(x):
+	r = scipy.optimize.minimize(RLLCV, x, method='SLSQP', tol=1e-10, options={'maxiter':100})
+	return r.x, r.success
+
+def dogleg(x):
+	r = scipy.optimize.minimize(RLLCV, x, method='dogleg', tol=1e-10, options={'maxiter':100})
+	return r.x, r.success
+
+def trustncg(x):
+	r = scipy.optimize.minimize(RLLCV, x, method='trust-ncg', tol=1e-10, options={'maxiter':100})
+	return r.x, r.success
 
 models = {
 	"Weibull":{

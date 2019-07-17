@@ -3,7 +3,7 @@ import numpy as np
 def random_vector(dimensions):
 	return np.array([np.random.uniform(x[0],x[1]) for x in dimensions])
 
-def search(objective, search_space, max_gen, population = None, pcount = 30, omega = 0.5, phi_p = 0.1, phi_g = 0.1):
+def search(objective, search_space, max_gen, population = None, omega = 0.5, phi_p = 0.1, phi_g = 0.1):
 	swarmbest = None								# have the swarm's best on hand
 	pop = []
 

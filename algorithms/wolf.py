@@ -245,7 +245,7 @@ Takes:
 Returns: 
 	final_positions: List of lists that have the final vectors for each in the population during the last iteration
 '''
-def search(objective, search_space, max_generations, population=None, wolves=100, r=0.5, alpha=1.0, step = 0.5, pa=0.90):
+def search(objective, search_space, max_generations, population=None, r=0.5, alpha=1.0, step = 0.5, pa=0.90):
 	#Generates random pop if none is passed
 	population = init_population(population)
 

@@ -14,7 +14,7 @@ def gaussian_random(scalar, search_space, generation):
 	return np.array([(np.random.random_sample() - 0.5) * alpha for x in range(len(search_space))])
 
 
-def search(objective, search_space, max_gens, pop = None, pop_count = 30, absorption = 1, randomness = 0.99):
+def search(objective, search_space, max_gens, pop = None, absorption = 1, randomness = 0.99):
 
 	if pop == None:
 		pop = [{"vector":random_vector(search_space)} for x in range(pop_count)]

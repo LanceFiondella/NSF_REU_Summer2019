@@ -107,7 +107,7 @@ Takes:
 Returns: 
 	final_positions: List of lists that have the final vectors for each in the population during the last iteration
 '''
-def search (objective, search_space, max_generations, population = None, nests = 100, ld = 1.0, alpha =1.0, pa = 0.25):
+def search (objective, search_space, max_generations, population = None, ld = 1.0, alpha =1.0, pa = 0.25):
 
 	if population == None:
 		population = init_population(search_space, nests)
@@ -122,7 +122,7 @@ def search (objective, search_space, max_generations, population = None, nests =
 	keep = len(population) - throw
 	
 	for gen in range(max_generations):
-		for test in range(nests):
+		for test in range(len(population)):
 
 			rand_candidate = population[randint(0, len(population)-1)]
 			levy_solution = levy_flight(objective,search_space, rand_candidate,ld, problem_size,alpha)

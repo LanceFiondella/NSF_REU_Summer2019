@@ -183,7 +183,7 @@ def init_passed_population(population, pop_size, problem_size, visual, objective
 		# p["visual"] = calc_visual_scope(p, visual, problem_size)
 	return pop
 
-def search(objective, search_space, max_gens, pop, pop_count,
+def search(objective, search_space, max_gens, pop,
 		   visual=0.1, crowd=2, step=0.1, try_number=1):
 	"""Performs artificial fish swarm algorithm search to find global minimum of passed objective function.
 
@@ -199,7 +199,7 @@ def search(objective, search_space, max_gens, pop, pop_count,
 	Returns:
 	list -- final bat positions
 	"""
-
+	pop_count = len(pop)
 	crowd = int(round(crowd, 0))
 	try_number = int(round(try_number, 0))
 	problem_size = len(search_space)    # search space provides bounds for each dimension of problem,

@@ -8,6 +8,8 @@
 # TODO - separate each model in file into model folder
 # TODO - multithread swarm algorithms in each nsga gen
 
+# TODO - use scipy optimize, restrict particular methods (without derivative-based methods)
+
 import matplotlib.pyplot as plt, csv
 import sys, os, models
 
@@ -16,13 +18,13 @@ import bat, bee, cuckoo, firefly, fish, pollination, pso, wolf
 
 #---- NSGA SETTINGS ------------------------------
 
-nsga_max_gens = 16				# number of generations in NSGA-II
+nsga_max_gens = 64				# number of generations in NSGA-II
 nsga_pop_size = 64 				# how many combinations there are, must be even
 nsga_p_cross = 0.98				# mutation crossover probability
-nsga_fn_evals = 1				# how many evaluations to average
+nsga_fn_evals = 8				# how many evaluations to average
 nsga_bpp = 16 					# bits / precision to use for each parameter
-nsga_cross_breed = False			# allow algorithms to change during the process
-nsga_free_range = False			# sets all parameter ranges to 0.5 +- 0.5 instead of predefined (needs more gens)
+nsga_cross_breed = True		# allow algorithms to change during the process
+nsga_free_range = True			# sets all parameter ranges to 0.5 +- 0.5 instead of predefined (needs more gens)
 nsga_cross_head_tail = True		# uses head/tail crossover instead of random bits
 
 model = models.models[sys.argv[1]]
@@ -31,12 +33,13 @@ model_generations = [12, 10]	# generations used in method
 
 
 stage1 = [lambda x: x]*2
-stage2 = [	#{	"algo":	firefly.search,	#formatted by algorithm then variable parameters base +- diff
-			#	"params":[
-			#		[0.95, 0.05],
-			#		[0.96, 0.04]
-			#	]
-			#},
+stage2 = [	{	
+				"algo":	firefly.search,
+				"params":[
+					[0.95, 0.05],
+					[0.96, 0.04]
+				]
+			},
 			{						# algo points to search function in swarm file
 				"algo":	pso.search,
 				"params":[			# contains all constant parameters in terms of 
@@ -97,7 +100,18 @@ stage2 = [	#{	"algo":	firefly.search,	#formatted by algorithm then variable para
 					[0.9, 0.075]
 				]
 			}]
-stage3 = [models.NM, models.ECM]
+stage3 = [
+			models.nelder_mead, 
+			models.powell, 
+			models.cg,
+			models.bfgs, 
+			models.lbfgsb, 
+			models.tnc, 
+			#models.cobyla, 
+			models.slsqp 
+			#models.dogleg 
+			#models.trustncg
+		]
 
 #---------------begin NSGA-II---------------------
 
@@ -111,7 +125,6 @@ def search(fn_evals, max_gens, pop_size, p_cross):
 	runs initial sorting and new population, iteratively
 	runs re-evaluation until convergence
 	'''
-	starting_time = time.time()
 	param_count = len(max(stage2, key = lambda x: len(x["params"]))["params"])
 
 	total_bit_count = stage_bits(0)			# get total number of bits for bitstring
@@ -133,6 +146,7 @@ def search(fn_evals, max_gens, pop_size, p_cross):
 
 	for gen in range(max_gens):				# begin generational aspect
 
+		starting_time = time.time()
 
 		t = {}								# code to visualize population percentages of each algorithm
 		for i in [ x[:-3] for x in os.listdir('algorithms') if x[-3:] == '.py']:
@@ -155,7 +169,7 @@ def search(fn_evals, max_gens, pop_size, p_cross):
 		children = reproduce(selected, pop_size, p_cross)
 
 		calculate_measures(children)
-		print(f"    > gen = {gen+1} / {max_gens}\tfronts = {len(fronts)}\telapsed={round(time.time()-starting_time, 1)}")
+		print(f"    > gen = {gen+1} / {max_gens}\tfronts = {len(fronts)}\tdelta={round(time.time()-starting_time, 1)}")
 
 
 	union = pop + children
@@ -179,26 +193,41 @@ def calculate_measures(pop):
 	for index, p in enumerate(pop):			# find fitness of each member of a population in order to find pareto-fitness
 		
 		alg_1, alg_2, alg_3, params = decode(p["bitstring"])
+
+		pop_size = len(params[3]) 			# get size of population to make new one
+		expanded = list(params) 			# convert it to a list to replace it
+
 		runtime, error = 0, 0
 
 		for i in range(nsga_fn_evals):		# get average of N runs
+
+
+			expanded[3] = [						# generate population, pseudorandom
+				[t[0] + t[1]*np.random.uniform(-1, 1) for t in model["estimates"]]
+				for x in range(pop_size)]
+
+			
+			params = tuple(expanded) 		# convert back to tuple
+
+
+			print(f"       > {index+1}/{len(pop)} ({i+1}/{nsga_fn_evals})\t{alg_2.__module__}: {alg_3.__name__} {' '*15}", end='\r')
+
 			stime = time.time()
 			lst =  alg_2(*params)			# get time of swarm algorithm
 
 			candidate = min(lst, key = model['objective'])
 											# get most-fit particle, check if it converges
 
-			result, conv = alg_3(candidate)
-
+			result, conv = alg_3(candidate)	# do newton's method or ECM on result for runtime
+											# don't care about the actual accuracy of that convergence
 			runtime += time.time() - stime
 
-			error += (model['objective'](candidate) / model['result'])
+			error += (model['objective'](result) / model['result'])
 			
 		p["objectives"] = [runtime/nsga_fn_evals, error/nsga_fn_evals]
+											# metrics: total runtime, and accuracy of swarm before convergence
 
-		print(f"       > {alg_2.__module__}: {index+1} / {len(pop)}          ", end='\r')
-
-	print('                              ', end= '\r')
+	print(' '*75, end= '\r')
 
 
 def decode(bitstring):
@@ -225,12 +254,8 @@ def decode(bitstring):
 	model_objective = model["objective"]	# get specific parameters for model
 	model_search_space = [model["search_space"] for i in range(model["dimensions"])]
 
-	model_init_pop = [						# generate population, pseudorandom
-		[t[0] + t[1]*np.random.uniform(-1, 1) for t in model["estimates"]]
-			for x in range(pop_size)]
 
-
-	params = (model_objective, model_search_space, gen_count, model_init_pop, pop_size)
+	params = (model_objective, model_search_space, gen_count, [0]*pop_size)
 											# get parameters for swarm algorithms
 	param_bits = bitstring[s1+s2+s3+len(pop_gen_bits):]
 	for idx, prm in enumerate(stage2[index_2]["params"]):
@@ -458,7 +483,7 @@ colors = {
 	'wolf':		'#e03e3e'
 }
 
-print('\033[4m' + "runtime         conv    algo    nm/ecm  gens    pop         params(algo-specific)" + '\033[0m')
+print('\033[4m' + "runtime         conv            algo    nm/ecm  gens    pop     params(algo-specific)" + '\033[0m')
 for p in pop:
 	r, r2, r3, params = decode(p["bitstring"])
 	n = r2.__module__

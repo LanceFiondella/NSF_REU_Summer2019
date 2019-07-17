@@ -1,6 +1,6 @@
 import numpy as np
 
-def search(objective, search_space, max_gen, pop = None, pop_count = 30, look_pct = 0.33, exp_pct = 0.33, wb = 0.5, wg = 0.5, rmult = 0.2):
+def search(objective, search_space, max_gen, pop = None, look_pct = 0.33, exp_pct = 0.33, wb = 0.5, wg = 0.5, rmult = 0.2):
 
 	pop = [{"vector": np.array(x), 'best_objective':float('inf')} for x in pop]
 	

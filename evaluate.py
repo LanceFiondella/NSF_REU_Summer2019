@@ -516,6 +516,10 @@ with open('output_populations.csv','w') as csvfile:
 	writer.writerow(["algorithm", "NM/ECM", "runtime", "AVG error", "BEST error", "best candidate's model parameters", "score of best"])
 	for p in pop:
 		r, r2, r3, params = decode(p["bitstring"])
+		rep = list(params)
+		rep[3] = [	{"bitstring":random_bitstring(total_bit_count + (2 + param_count) * nsga_bpp)} 
+			for i in range(pop_size)]
+		params = tuple(rep)
 		newl = r2(*params)
 		bst = min(newl, key = model['objective'])
 		rs, con = r3(bst)

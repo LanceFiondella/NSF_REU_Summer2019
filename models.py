@@ -2,11 +2,16 @@ import numpy as np
 from math import *
 import scipy, time, warnings
 import scipy.optimize
+import sys
 
 warnings.filterwarnings("ignore")
 
 #Weibull model
-data = [3,33,146,227,342,351,353,444,556,571,709,759,836,860,968,1056,1726,1846,1872,1986,2311,2366,2608,2676,3098,3278,3288,4434,5034,5049,5085,5089,5089,5097,5324,5389,5565,5623,6080,6380,6477,6740,7192,7447,7644,7837,7843,7922,8738,10089,10237,10258,10491,10625,10982,11175,11411,11442,11811,12559,12559,12791,13121,13486,14708,15251,15261,15277,15806,16185,16229,16358,17168,17458,17758,18287,18568,18728,19556,20567,21012,21308,23063,24127,25910,26770,27753,28460,28493,29361,30085,32408,35338,36799,37642,37654,37915,39715,40580,42015,42045,42188,42296,42296,45406,46653,47596,48296,49171,49416,50145,52042,52489,52875,53321,53443,54433,55381,56463,56485,56560,57042,62551,62651,62661,63732,64103,64893,71043,74364,75409,76057,81542,82702,84566,88682]
+# sys1
+#data = [3,33,146,227,342,351,353,444,556,571,709,759,836,860,968,1056,1726,1846,1872,1986,2311,2366,2608,2676,3098,3278,3288,4434,5034,5049,5085,5089,5089,5097,5324,5389,5565,5623,6080,6380,6477,6740,7192,7447,7644,7837,7843,7922,8738,10089,10237,10258,10491,10625,10982,11175,11411,11442,11811,12559,12559,12791,13121,13486,14708,15251,15261,15277,15806,16185,16229,16358,17168,17458,17758,18287,18568,18728,19556,20567,21012,21308,23063,24127,25910,26770,27753,28460,28493,29361,30085,32408,35338,36799,37642,37654,37915,39715,40580,42015,42045,42188,42296,42296,45406,46653,47596,48296,49171,49416,50145,52042,52489,52875,53321,53443,54433,55381,56463,56485,56560,57042,62551,62651,62661,63732,64103,64893,71043,74364,75409,76057,81542,82702,84566,88682]
+
+data = [39, 49, 53, 89, 93, 98, 102, 193, 242, 243, 268, 269, 273, 303, 345, 354, 403, 447, 479, 482, 560, 561, 591, 796, 801, 930, 1033, 1257, 1443, 1496, 1510, 1519, 1521, 1531, 1532, 1566, 1736, 1865, 1869, 1873, 1908, 1913, 1918, 1940, 1976, 2011, 2132, 2155, 2188, 2236, 2268, 2289, 2293, 2316, 2325, 2338, 2503, 2517, 2539, 2580, 2592, 2730, 2825, 2874, 2936, 2938, 2973, 3062, 3152, 3221, 3243, 3258, 3277, 3319, 3333, 3344, 3385, 3595, 3611, 3641, 3678, 3744, 3753, 3769, 3783, 3807, 3819, 3978, 4067, 4185, 4214, 4235, 4253, 4255, 4369, 4406, 4452, 4469, 4470, 4620, 5002, 5162, 5228, 5434, 5443, 5469, 5531, 5770, 5783, 5787, 5872, 5957, 6197, 6375, 6409, 6511, 6520, 6666, 6725, 6773, 6798, 6823, 6934, 6939, 6970, 7021, 7027, 7220, 7247, 7272, 7368, 7394, 7424, 7454, 7471, 7791, 7869, 7908, 7921, 7934, 7953, 8081, 8115, 8199, 8239, 8416, 8765, 9039, 9121, 9179, 9210, 9324, 9363, 9451, 9535, 9767, 9875, 9913, 9999, 10006, 10028, 10108, 10347, 10350, 10389, 10452, 10604, 10667, 10747, 10992, 11188, 11234, 11386, 11488, 11497, 11725, 11945, 12153, 12231, 12234, 12317, 12323, 12535, 12626, 12629, 12639, 12811, 12832, 13005, 13376, 13416, 13464, 13590, 13680, 13829, 13859, 14176, 14676, 15349, 15781, 15847, 16015, 16081, 16147, 16275, 16324, 16656];  
+
 data = np.array([float(j) for j in data])
 #--- COST/OBJECTIVE FUNCTION ------------------------------------------------------------+
 ########### Best solution  - -966.0803348790324  ###########################################
@@ -25,10 +30,19 @@ def RLLWei(x):
 #--- Covariate model ------------------------------------------------------------+
 ########### Best solution  - -23.0067  ###########################################
 
+	# dataset 1
+kVec = np.array([1, 1, 2, 1, 8, 9, 6, 7, 4, 3, 0, 4, 1, 0, 2, 2, 3])
+EVec = np.array([1, 0, 0.5, 0.5, 2.0, 5, 4.5, 2.5, 4, 2, 0, 4, 6, 4, 6, 10, 8])
+FVec = np.array([0.0531, 0.0619, 0.1580, 0.0810, 1.0460, 1.7500, 2.9600, 4.97, 0.42, 4.7, 0.9, 1.5, 2.0, 1.2, 1.2, 2.2, 7.6])
+CVec = np.array([4, 20, 1, 1, 32, 32, 24, 24, 24, 30, 0, 8, 8, 12, 20, 32, 24])
+
+	# dataset 2, comment out for ds1
+'''
 kVec = np.array([2, 11, 2, 4, 3, 1, 1, 2, 4, 0, 4, 1, 3, 0])
 EVec = np.array([0.05, 1, 0.19, 0.41, 0.32, 0.61, 0.32, 1.83, 3.01, 1.79, 3.17,3.4, 4.2, 1.2])
 FVec = np.array([1.3, 17.8, 5.0, 1.5, 1.5, 3.0, 3.0, 8, 30, 9, 25, 15, 15, 2])
 CVec = np.array([0.5, 2.8, 1, 0.5, 0.5, 1, 0.5, 2.5, 3.0, 3.0, 6, 4, 4, 1])
+'''
 
 #--- COST/OBJECTIVE FUNCTION ------------------------------------------------------------+
 def RLLCV(x):
@@ -114,6 +128,7 @@ def NM(estimates):
 
 
 #--- ECM calculation ----------------------------------------------------------------
+
 def logL(b,c):
 	n = len(data)
 	tn = data[n-1]
@@ -158,44 +173,49 @@ def ECM(estimates):
 	#print(time.time() - ts, "ECM")
 	return roots, converged
 
+
+# ---- other convergence methods
+
+selected_model = None
+
 def nelder_mead(x):
-	r = scipy.optimize.minimize(RLLCV, x, method='Nelder-Mead', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(selected_model, x, method='Nelder-Mead', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def powell(x):
-	r = scipy.optimize.minimize(RLLCV, x, method='Powell', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(selected_model, x, method='Powell', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def cg(x):
-	r = scipy.optimize.minimize(RLLCV, x, method='CG', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(selected_model, x, method='CG', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def bfgs(x):
-	r = scipy.optimize.minimize(RLLCV, x, method='BFGS', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(selected_model, x, method='BFGS', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def lbfgsb(x):
-	r = scipy.optimize.minimize(RLLCV, x, method='L-BFGS-B', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(selected_model, x, method='L-BFGS-B', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def tnc(x):
-	r = scipy.optimize.minimize(RLLCV, x, method='TNC', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(selected_model, x, method='TNC', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def cobyla(x):
-	r = scipy.optimize.minimize(RLLCV, x, method='COBYLA', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(selected_model, x, method='COBYLA', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def slsqp(x):
-	r = scipy.optimize.minimize(RLLCV, x, method='SLSQP', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(selected_model, x, method='SLSQP', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def dogleg(x):
-	r = scipy.optimize.minimize(RLLCV, x, method='dogleg', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(selected_model, x, method='dogleg', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def trustncg(x):
-	r = scipy.optimize.minimize(RLLCV, x, method='trust-ncg', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(selected_model, x, method='trust-ncg', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 models = {
@@ -236,6 +256,8 @@ models = {
 		"result":		1
 	}
 }
+
+selected_model = models[sys.argv[1]]["objective"]
 
 if __name__ == "__main__":
 	#print(RLLWei([404/1000000, 1]))

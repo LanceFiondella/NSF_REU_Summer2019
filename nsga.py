@@ -18,10 +18,13 @@ def search(fn_evals, max_gens, pop_size, p_cross):
 	'''
 	param_count = len(max(stage2, key = lambda x: len(x["params"]))["params"])
 
-	total_bit_count = stage_bits(0)			# get total number of bits for bitstring
+	total_stage_bits = stage_bits(0)			# get total number of bits for bitstring
 
-	pop = [	{"bitstring":random_bitstring(total_bit_count + (2 + param_count) * nsga_bpp)} 
-			for i in range(pop_size)]		# bitstring consists of algo bits, parameter bits, pop size bits, and gen count bits
+	total_bit_count = total_stage_bits + (2 + param_count) * nsga_bpp
+												# bitstring consists of algo bits, parameter bits
+												# pop size bits, and gen count bits
+	pop = [	{"bitstring":random_bitstring(total_bit_count)} 
+			for i in range(pop_size)]
 										
 	print(" > begin initial objectives & sort")
 	calculate_measures(pop)					# prelim. results pt 1: get initial pop scoring

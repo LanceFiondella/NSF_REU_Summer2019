@@ -3,8 +3,22 @@
 # TODO - explore variants of best ones (bee, bat, pso, etc)
 # TODO - separate each model in file into model folder
 
+# TODO - add bits for skipping swarm algo
+# TODO - use both CV datasets
+# TODO - add estimate fn for wei (a = n, b = n/sum(bi), c = 1)
+# TODO - check probability of range selection, make sure it's random
+# TODO - write nsga pgh of running with params
+# TODO - fix table in paper (one name per algo, zfill ranges, re-order to match paper)
+# TODO - before illustrations, talk about methods then covariates
+# TODO - table of NSGA variables
+# TODO - paragraph on open nsga constraints
+
+# TODO - 1+ep and time vs iterations graph
+# TODO - pop and gens vs iterations (swarm)
+# TODO - add no swarm to percentage graph
+
 import matplotlib.pyplot as plt, csv
-import sys, os, models, nsga
+import sys, os, models, nsga, numpy as np
 
 sys.path.insert(0, f"algorithms")
 import bat, bee, cuckoo, firefly, fish, pollination, pso, wolf
@@ -93,19 +107,19 @@ print("done!\n")
 pop.sort(key = lambda x: x["objectives"][0] + x["objectives"][1])
 
 colors = {
-	'bat':		'#020202',
-	'bee':		'#bbaf22',
-	'cuckoo':	'#ec994a',
-	'firefly': 	'#ff0000',
-	'fish':		'#3d7bff',
-	'pollination':'#ff3dff',
-	'pso':		'#3dd6ff',
-	'wolf':		'#e03e3e'
+	'bat':			'#020202',
+	'bee':			'#bbaf22',
+	'cuckoo':		'#ec994a',
+	'firefly': 		'#ff0000',
+	'fish':			'#3d7bff',
+	'pollination':	'#ff3dff',
+	'pso':			'#3dd6ff',
+	'wolf':			'#e03e3e'
 }
 
 print('\033[4m' + "runtime         conv            algo    nm/ecm  gens    pop     params(algo-specific)" + '\033[0m')
 for p in pop:
-	r, r2, r3, params = decode(p["bitstring"])
+	r, r2, r3, params = nsga.decode(p["bitstring"])
 	n = r2.__module__
 	c = colors[n]
 
@@ -132,13 +146,14 @@ plt.legend(loc='upper left')
 
 
 with open('output_populations.csv','w') as csvfile:
+	model = models.models[sys.argv[1]]
 	writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 	writer.writerow([f"NSGA GENS: {nsga_max_gens}",f"NSGA POP: {nsga_pop_size}",f"NSGA CROSSOVER: {nsga_p_cross}",f"NSGA AVG EVALS: {nsga_fn_evals}",f"NSGA CROSSBREED: {nsga_cross_breed}"])
 	writer.writerow([f"MODEL: {[x for x in models.models if models.models[x]==model][0]}", f"MODEL POP: {model_pop_count}", f"MODEL GENS: {model_generations}"])
 	writer.writerow([])
 	writer.writerow(["algorithm", "NM/ECM", "runtime", "AVG error", "RANDOM error", "best candidate's model parameters", "score of best"])
 	for p in pop:
-		r, r2, r3, params = decode(p["bitstring"])
+		r, r2, r3, params = nsga.decode(p["bitstring"])
 		rep = list(params)
 		sz = len(params[3])
 		param_count = len(max(stage2, key = lambda x: len(x["params"]))["params"])

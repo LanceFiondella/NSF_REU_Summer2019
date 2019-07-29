@@ -1,7 +1,9 @@
-import numpy as np
+import sys, numpy as np
 from math import *
 import scipy, time, warnings
 import scipy.optimize
+
+model = sys.argv[1]
 
 warnings.filterwarnings("ignore")
 
@@ -159,43 +161,43 @@ def ECM(estimates):
 	return roots, converged
 
 def nelder_mead(x):
-	r = scipy.optimize.minimize(RLLWei, x, method='Nelder-Mead', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(models[model]['objective'], x, method='Nelder-Mead', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def powell(x):
-	r = scipy.optimize.minimize(RLLWei, x, method='Powell', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(models[model]['objective'], x, method='Powell', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def cg(x):
-	r = scipy.optimize.minimize(RLLWei, x, method='CG', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(models[model]['objective'], x, method='CG', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def bfgs(x):
-	r = scipy.optimize.minimize(RLLWei, x, method='BFGS', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(models[model]['objective'], x, method='BFGS', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def lbfgsb(x):
-	r = scipy.optimize.minimize(RLLWei, x, method='L-BFGS-B', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(models[model]['objective'], x, method='L-BFGS-B', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def tnc(x):
-	r = scipy.optimize.minimize(RLLWei, x, method='TNC', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(models[model]['objective'], x, method='TNC', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def cobyla(x):
-	r = scipy.optimize.minimize(RLLWei, x, method='COBYLA', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(models[model]['objective'], x, method='COBYLA', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def slsqp(x):
-	r = scipy.optimize.minimize(RLLWei, x, method='SLSQP', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(models[model]['objective'], x, method='SLSQP', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def dogleg(x):
-	r = scipy.optimize.minimize(RLLWei, x, method='dogleg', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(models[model]['objective'], x, method='dogleg', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 def trustncg(x):
-	r = scipy.optimize.minimize(RLLWei, x, method='trust-ncg', tol=1e-10, options={'maxiter':100})
+	r = scipy.optimize.minimize(models[model]['objective'], x, method='trust-ncg', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
 models = {

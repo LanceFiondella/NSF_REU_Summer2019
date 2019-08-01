@@ -72,9 +72,8 @@ def RLLCV(x):
 def Sphere(vector):
 	return np.sum(np.square(vector)) + 1
 
-def Rastr(vec):
-	return 10 + \
-		sum([xi**2 - 10*cos(2*pi*xi) for xi in vec])
+def hill(vec):
+	return (sum([np.abs(x) for x in vec])/len(vec)) - np.cos(np.prod(vec)) + 2
 
 #--- EM calculation -----------------------------------------------------------------
 def calcMLEs(x):
@@ -225,16 +224,16 @@ models = {
 	},
 	"Sphere10":{
 		"objective":	Sphere,
-		"dimensions":	2,
+		"dimensions":	100,
 		"search_space":	[-1,1],
-		"estimates":	[[ 0, 1] for i in range(2)],
+		"estimates":	[[ 0, 1] for i in range(100)],
 		"result":		1
 	},
-	"Rastrigin":{
-		"objective":	Rastr,
-		"dimensions":	2,
-		"search_space":	[-5,5],
-		"estimates":	[[ 2, -2] for i in range(2)],
+	"Hill":{
+		"objective":	hill,
+		"dimensions":	10,
+		"search_space":	[-15,15],
+		"estimates":	[[ 2, -2] for i in range(10)],
 		"result":		1
 	}
 }

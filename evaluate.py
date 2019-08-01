@@ -14,8 +14,11 @@
 # TODO - paragraph on open nsga constraints
 
 # TODO - 1+ep and time vs iterations graph
+# TODO - add none as member of swarm algorithms instead of separate bit
 # TODO - pop and gens vs iterations (swarm)
+	# BAD - pop and gens highly dependent on algorithm
 
+# time vs dims, dom species vs dom individual, break out none graph into its methods, plot best indivs over 100 exps
 
 import matplotlib.pyplot as plt, csv
 import sys, os, models
@@ -25,18 +28,18 @@ import bat, bee, cuckoo, firefly, fish, pollination, pso, wolf
 
 #---- NSGA SETTINGS ------------------------------
 
-nsga_max_gens = 32				# number of generations in NSGA-II
-nsga_pop_size = 256 				# how many combinations there are, must be even
+nsga_max_gens = 64				# number of generations in NSGA-II
+nsga_pop_size = 32 				# how many combinations there are, must be even
 nsga_p_cross = 0.98				# mutation crossover probability
-nsga_fn_evals = 16				# how many evaluations to average
+nsga_fn_evals = 20				# how many evaluations to average
 nsga_bpp = 16 					# bits / precision to use for each parameter
 nsga_cross_breed = False		# allow algorithms to change during the process
 nsga_free_range = False			# sets all parameter ranges to 0.5 +- 0.5 instead of predefined (needs more gens)
 nsga_cross_head_tail = True		# uses head/tail crossover instead of random bits
 
 model = models.models[sys.argv[1]]
-model_pop_count = [16, 10]		# pop size for method
-model_generations = [12, 10]	# generations used in method
+model_pop_count = [22, 16]		# pop size for method
+model_generations = [22, 16]	# generations used in method
 
 
 stage1 = [lambda x: x]*2
@@ -106,7 +109,12 @@ stage2 = [	{
 					[0.5, 0.1],
 					[0.9, 0.075]
 				]
-			}]
+			},
+			{
+				"algo": None,
+				"params":[]
+			}
+			]
 stage3 = [
 			models.nelder_mead, 
 			models.powell, 
@@ -134,7 +142,7 @@ def search(fn_evals, max_gens, pop_size, p_cross):
 	'''
 	param_count = len(max(stage2, key = lambda x: len(x["params"]))["params"])
 
-	total_bit_count = stage_bits(0) + 1 + (2 + param_count) * nsga_bpp
+	total_bit_count = nsga_bpp * (param_count + 5)
 											# get total number of bits for bitstring
 
 	pop = [	{"bitstring":random_bitstring(total_bit_count)} 
@@ -158,8 +166,8 @@ def search(fn_evals, max_gens, pop_size, p_cross):
 		for i in [ x[:-3] for x in os.listdir('algorithms') if x[-3:] == '.py']:
 			t[i] = 0
 		for p in pop:
-			_,b,_,_,e = decode(p["bitstring"])
-			m = b.__module__ if e == 1 else 'NONE'
+			_,b,_,_ = decode(p["bitstring"])
+			m = b.__module__ if b != None else 'NONE'
 			t[m] += 1
 		algs.append(t)
 
@@ -179,6 +187,8 @@ def search(fn_evals, max_gens, pop_size, p_cross):
 		calculate_measures(children)
 
 		res.append([t['objectives'] for t in children])
+		pops.append([(len(decode(t['bitstring'])[3][3]),np.prod(t['objectives'])) for t in children])
+		gens.append([(decode(t['bitstring'])[3][2],np.prod(t['objectives'])) for t in children])
 
 		print(f"    > gen = {gen+1} / {max_gens}\tfronts = {len(fronts)}\tdelta={round(time.time()-starting_time, 1)}sec")
 
@@ -196,6 +206,7 @@ def random_bitstring(num_bits):
 	'''
 	return "".join([str(np.random.randint(2)) for i in range(num_bits)]).zfill(num_bits)
 
+
 def calculate_measures(pop):
 	'''
 	Given a population member, decodes and evaluates the
@@ -203,12 +214,13 @@ def calculate_measures(pop):
 	'''
 	for index, p in enumerate(pop):			# find fitness of each member of a population in order to find pareto-fitness
 		
-		alg_1, alg_2, alg_3, params, enable_swarm = decode(p["bitstring"])
+		alg_1, alg_2, alg_3, params = decode(p["bitstring"])
 
 		pop_size = len(params[3]) 			# get size of population to make new one
 		expanded = list(params) 			# convert it to a list to replace it
 
 		runtime, error = 0, 0
+
 
 		for i in range(nsga_fn_evals):		# get average of N runs
 
@@ -219,10 +231,11 @@ def calculate_measures(pop):
 
 			
 			params = tuple(expanded) 		# convert back to tuple
-			print(' '*55, end='\r')
-			print(f"       > {index+1}/{len(pop)} ({i+1}/{nsga_fn_evals})\t{alg_2.__module__ if (enable_swarm == 1) else 'NONE'}: {alg_3.__name__} {' '*15}", end='\r')
+			print(' '*80, end='\r')
+			st = f"       > {index+1}/{len(pop)} ({i+1}/{nsga_fn_evals})\t{alg_2.__module__ if (alg_2 != None) else 'NONE'}: {alg_3.__name__} {[round(x,3) for x in params[4:]]}"
+			print(f" {st}{' '*(80-len(st))}", end='\r')
 			stime = time.time()
-			lst =  alg_2(*params) if enable_swarm == 1 else params[3]
+			lst =  alg_2(*params) if alg_2 != None else params[3]
 											# run swarm estimator if enabled, otherwise just take random values
 
 			candidate = min(lst, key = model['objective'])
@@ -246,38 +259,34 @@ def decode(bitstring):
 	gives back the corresponding algorithms (phase 1, 2, 3)
 	as well as the parameters passed to ph1
 	'''
-	s1, s2, s3 = stage_bits(-1)				# get bits per stage for indexing
-	s1_bits, s2_bits, s3_bits = bitstring[ : s1], bitstring[s1 : s1+s2], bitstring[ s1+s2 : s1+s2+s3 ]
-											# get corresponding bits for each stage
-	index_1 = round(bin_signum(s1_bits, (len(stage1)-1)/2, (len(stage1)-1)/2, s1))
-	index_2 = round(bin_signum(s2_bits, (len(stage2)-1)/2, (len(stage2)-1)/2, s2))
-	index_3 = round(bin_signum(s3_bits, (len(stage3)-1)/2, (len(stage3)-1)/2, s3))
+	groups = [bitstring[x*nsga_bpp:][:nsga_bpp] for x in range( int( len(bitstring) / nsga_bpp ) )]
+
+	index_1 = round(bin_signum(groups[0], (len(stage1)-1)/2, (len(stage1)-1)/2))
+	index_2 = round(bin_signum(groups[1], (len(stage2)-1)/2, (len(stage2)-1)/2))
+	index_3 = round(bin_signum(groups[2], (len(stage3)-1)/2, (len(stage3)-1)/2))
 											# get indexes of each stage, by rounding
 											# stage_num / 2 +- stage_num / 2
 
-	pop_gen_bits = bitstring[s1+s2+s3:][:nsga_bpp*2]
-	pop_size = round(bin_signum(pop_gen_bits[:nsga_bpp], model_pop_count[0], model_pop_count[1]))
-	gen_count = round(bin_signum(pop_gen_bits[nsga_bpp:], model_generations[0], model_generations[1]))
+	pop_size = round(bin_signum(groups[3], model_pop_count[0], model_pop_count[1]))
+	gen_count = round(bin_signum(groups[4], model_generations[0], model_generations[1]))
 											# get bits corresponding to model gens and size
 											# and generate pop size / generations based on values
 
-	model_objective = model["objective"]	# get specific parameters for model
 	model_search_space = [model["search_space"] for i in range(model["dimensions"])]
 
-
-	params = (model_objective, model_search_space, gen_count, [0]*pop_size)
+	params = (model["objective"], model_search_space, gen_count, [0]*pop_size)
 											# get parameters for swarm algorithms
-	param_bits = bitstring[s1+s2+s3+len(pop_gen_bits):]
-	swarm_enabled = param_bits[-1]
+	param_bits = groups[5:]
 	for idx, prm in enumerate(stage2[index_2]["params"]):
-		this_bits = param_bits[idx * nsga_bpp :][:nsga_bpp]
+		this_bits = param_bits[idx]
 											# get part of bitstring corresponding to parameter
 		if nsga_free_range:
 			params += (bin_signum(this_bits, 0.5, 0.5),)
 		else:
 			params += (bin_signum(this_bits, prm[0], prm[1]),)
 
-	return stage1[index_1], stage2[index_2]["algo"], stage3[index_3], params, int(swarm_enabled) 	# send back algorithms & parameters for timing
+	return stage1[index_1], stage2[index_2]["algo"], stage3[index_3], params	# send back algorithms & parameters for timing
+
 
 def stage_bits(status):
 	'''
@@ -296,6 +305,7 @@ def stage_bits(status):
 	elif status == 3:						# stage 3 bits
 		return int(np.ceil(np.log2(len(stage3))))
 
+
 def bin_signum(bitstring, lmbda, mu, bpp = nsga_bpp):
 	'''
 	Use a bitstring to get a number within lambda +- mu
@@ -303,6 +313,7 @@ def bin_signum(bitstring, lmbda, mu, bpp = nsga_bpp):
 	uniform = int(bitstring, 2) / (2 ** bpp - 1)
 	uniform = 2 * uniform - 1
 	return lmbda + uniform * mu
+
 
 def fast_nondominated_sort(pop):
 	'''
@@ -471,11 +482,16 @@ def select_parents(fronts, pop_size):
 	return offspring
 
 # ---------- DONE, RUN SEARCH ALGORITHM -------------------------------------------------------------
-
+#finals = []
+#for i in range(100):
 res = []
-algs=[]
+algs = []
+pops = []
+gens = []
 pop = search(nsga_fn_evals, nsga_max_gens, nsga_pop_size, nsga_p_cross)
-print("done!\n")
+#finals.append(algs[-1])
+#algs = finals
+#print("done!\n")
 
 
 
@@ -494,43 +510,60 @@ colors = {
 	'wolf':		'#e03e3e',
 	'NONE':		'#00aa00'
 }
+
+print('\033[4m' + "runtime & avg conv & algo & conv method & gens & pop & params(algo-specific) \\\\" + '\033[0m')
+for p in pop:
+	r, r2, r3, params = decode(p["bitstring"])
+	n = r2.__module__
+	c = colors[n]
+
+	print(' & '.join([str(round(x,12)).ljust(12, ' ') for x in p["objectives"]]), end=" & ")
+	print(f"{n[:6] if en == 1 else 'NONE'} & {r3.__name__[:6] } & {params[2] if r2 != None else 'n/a'} & {len(params[3])if r2 != None else 'n/a'}", end=" & ")
+
+	if r2 != None:
+		for i in params[5:]:
+			print(round(i,3), end=" & ")
+	print("\\\\")
+
+	#plt.title("1+ep vs time")
+	#plt.plot(p["objectives"][0],p["objectives"][1],c+"o")
+
+'''
+# plt size and gens
+plt.plot([sum([x[0] for x in l])/len(l) for l in pops] , 'b', label='pop size')
+plt.plot([sum([x[0] for x in l])/len(l) for l in gens], 'r', label='gen count')
+plt.title('Population Size & Swarm Generations vs Iterations (Average)')
+plt.legend(loc='best')
+plt.show()
+'''
+
+
+'''
 ers = []
 tss = []
 for iteration, pt in enumerate(res):
 	er = 0
 	ts = 0
-	c = 0
+	c = 1
 	for memb in pt:
 		plt.plot(iteration, memb[0],'r*')
 		ts += memb[0]
 		if (not np.isnan(memb[1])) and (0 < memb[1] < 3):
-			plt.plot(iteration, memb[1],'b*')
-			er += memb[1]
+			plt.plot(iteration, memb[1]-1,'b*')
+			er += memb[1]-1
 			c += 1
 	er /= c
 	ts /= len(pt)
 	ers.append(er)
 	tss.append(ts)
-plt.plot(tss, 'r')
-plt.plot(ers, 'b')
+plt.plot(tss, 'r',label='time')
+plt.plot(ers, 'b', label='epsilon')
+plt.title('Time & Error vs Iterations')
+plt.legend(loc='best')
 plt.show()
+'''
 
-print('\033[4m' + "runtime         avg conv        algo    nm/ecm  gens    pop     params(algo-specific)" + '\033[0m')
-for p in pop:
-	r, r2, r3, params, en = decode(p["bitstring"])
-	n = r2.__module__
-	c = colors[n]
-
-	print('\t'.join([str(round(x,12)).ljust(12, ' ') for x in p["objectives"]]), end="\t")
-	print(f"{n[:6] if en == 1 else 'NONE'}\t{r3.__name__[:6]}\t{params[2]}\t{len(params[3])}", end="\t")
-
-	for i in params[5:]:
-		print(round(i,3), end="\t")
-	print()
-
-	#plt.title("1+ep vs time")
-	#plt.plot(p["objectives"][0],p["objectives"][1],c+"o")
-
+'''
 names = [x[:-3] for x in os.listdir('algorithms') if x[-3:] == '.py']
 names.append('NONE')
 prog = {}
@@ -538,8 +571,10 @@ for n in names:
 	prog[n] = [x[n] for x in algs]
 for n in names:
 	plt.plot([l/nsga_pop_size for l in prog[n]],colors[n],label=n)
-plt.title('algorithm counts vs generation')
-plt.legend(loc='upper left')
+plt.title('Algorithm percentage of population vs Iterations')
+plt.legend(loc='best')
+'''
+
 
 with open('output_populations.csv','w') as csvfile:
 	writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -548,7 +583,7 @@ with open('output_populations.csv','w') as csvfile:
 	writer.writerow([])
 	writer.writerow(["algorithm", "NM/ECM", "runtime", "AVG error", "BEST error", "best candidate's model parameters", "score of best"])
 	for p in pop:
-		r, r2, r3, params, en = decode(p["bitstring"])
+		r, r2, r3, params = decode(p["bitstring"])
 		pop_size = len(params[3])
 		rep = list(params)
 		rep[3] = [						# generate population, pseudorandom
@@ -561,6 +596,6 @@ with open('output_populations.csv','w') as csvfile:
 		bst = min(newl, key = model['objective'])
 		rs, con = r3(bst)
 		sc = model['objective'](rs) / model['result']
-		writer.writerow([r2.__module__ if en else 'NONE', r3.__name__, p["objectives"][0],p["objectives"][1], sc, rs, model["objective"](rs)])
+		writer.writerow([r2.__module__ if r2 != None else 'NONE', r3.__name__, p["objectives"][0],p["objectives"][1], sc, rs, model["objective"](rs)])
 
 plt.show()

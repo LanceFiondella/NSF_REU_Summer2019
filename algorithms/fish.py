@@ -125,7 +125,7 @@ def prey_state(pop, current_fish, fish_in_vis, try_number, step, objective):
 		rand_fish["fitness"] = objective(rand_fish["position"])
 		if (rand_fish["fitness"] < current_fish["fitness"]):
 			rand_minus_current = np.subtract(rand_fish["position"], current_fish["position"])
-			magnitude = np.absolute(np.subtract(rand_fish["position"], current_fish["position"]))
+			magnitude = np.linalg.norm(np.subtract(rand_fish["position"], current_fish["position"]))
 			direction = np.divide(rand_minus_current, magnitude)
 			current_fish["position"] = np.add(current_fish["position"], np.random.random() * step * direction)
 		else:
@@ -142,7 +142,7 @@ def swarm_state(current_fish, center_pos, step, objective):
 	objective (function) - objective function used to evaluate population fitness
 	'''
 	center_minus_current = np.subtract(center_pos, current_fish["position"])
-	magnitude = np.absolute(np.subtract(center_pos, current_fish["position"]))
+	magnitude = np.linalg.norm(np.subtract(center_pos, current_fish["position"]))
 	direction = np.divide(center_minus_current, magnitude)
 	current_fish["position"] = np.add(current_fish["position"], np.random.random() * step * direction)
 	current_fish["fitness"] = objective(current_fish["position"])
@@ -159,7 +159,7 @@ def follow_state(current_fish, best_pos, step, objective):
 	objective (function) - objective function used to evaluate population fitness
 	'''
 	best_minus_current = np.subtract(best_pos, current_fish["position"])
-	magnitude = np.absolute(np.subtract(best_pos, current_fish["position"]))
+	magnitude = np.linalg.norm(np.subtract(best_pos, current_fish["position"]))
 	direction = np.divide(best_minus_current, magnitude)
 	current_fish["position"] = np.add(current_fish["position"], np.random.random() * step * direction)
 	current_fish["fitness"] = objective(current_fish["position"])
@@ -259,7 +259,7 @@ def main():
 
 	initial_pop = [[np.random.uniform(search_space[j][0], search_space[j][1]) for j in range(problem_size)] for i in range(pop_size)]
 
-	final_positions = search(objective_function, search_space, max_iterations, initial_pop, pop_size,
+	final_positions = search(objective_function, search_space, max_iterations, initial_pop,
 		visual, crowd, step, try_number)
 
 if __name__== "__main__":

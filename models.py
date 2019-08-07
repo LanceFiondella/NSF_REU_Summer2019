@@ -222,11 +222,11 @@ models = {
 						],#[0.1,0,0,0],
 		"result":		23.0067
 	},
-	"Sphere10":{
+	"Sphere":{
 		"objective":	Sphere,
-		"dimensions":	100,
+		"dimensions":	2,
 		"search_space":	[-1,1],
-		"estimates":	[[ 0, 1] for i in range(100)],
+		"estimates":	[[ 0, 1] for i in range(2)],
 		"result":		1
 	},
 	"Hill":{

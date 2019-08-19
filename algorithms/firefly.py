@@ -11,7 +11,7 @@ def random_vector(search_space):
 
 def gaussian_random(scalar, search_space, generation):
 	alpha = scalar ** generation
-	return np.array([(np.random.random_sample() - 0.5) * alpha for x in range(len(search_space))])
+	return np.array([(np.random.uniform(-1)) * alpha for x in range(len(search_space))])
 
 
 def search(objective, search_space, max_gens, pop = None, absorption = 1, randomness = 0.99):
@@ -25,17 +25,19 @@ def search(objective, search_space, max_gens, pop = None, absorption = 1, random
 		p["objective"] = objective(p["vector"]) #intensity(p["vector"], absorption)
 
 	last = 0
+
 	for gen in range(max_gens):
 		for p in pop:
 			for n in pop:
-				if n["objective"] <= p["objective"]:
+				if n["objective"] < p["objective"]:
 										# calculate random movement, decreases with time	(8.13)
 										# attractiveness between two fireflies 				(8.4)
 					attr = attractiveness(p["vector"], n["vector"], absorption)
 										# calculate new position for firefly 				(8.11)
 					p["vector"] = 	p["vector"] + \
-									gaussian_random(randomness, search_space, gen) + \
-									attr * (n["vector"] - p["vector"])
+									attr * (n["vector"] - p["vector"]) + \
+									gaussian_random(randomness, search_space, gen)
+									
 
 					for i in range(len(p["vector"])):		# keep it inside search space
 						p["vector"][i] = min(p["vector"][i], search_space[i][1])

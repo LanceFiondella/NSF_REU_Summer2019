@@ -3,7 +3,7 @@ from math import *
 import scipy, time, warnings
 import scipy.optimize
 
-model = sys.argv[1]
+model = sys.argv[1] if len(sys.argv) > 1 else 'Covariate'
 
 warnings.filterwarnings("ignore")
 
@@ -68,14 +68,37 @@ def RLLCV(x):
 		return float('inf')
 	return cv
 
+#--- multivariable optimization
 
 def Sphere(vector):
 	return np.sum(np.square(vector)) + 1
 
-def hill(vec):
-	return (sum([np.abs(x) for x in vec])/len(vec)) - np.cos(np.prod(vec)) + 2
+def Rastrigin(vec):
+	A = 10
+	n = len(vec)
+	return A*n + np.sum([x**2 - A*np.cos(2*np.pi*x) for x in vec]) + 1
+
+def Ackley(vec):
+	rsq = np.sum(np.square(vector))
+	cos_sum = np.sum([2*np.pi*x for x in vec])
+	return -20 * np.exp(-0.2 * np.sqrt(0.5 * rsq) ) - np.exp(0.5 * cos_sum) + np.exp(1) + 20 + 1
+
+def Beale(vec):
+	x,y = vec
+	return (1.5 - x + (x*y))**2 + (2.25 - x + (x*y**2))**2 + (2.625 - x + (x*y**3))**2 + 1
+
+def GoldsteinPrice(vec):
+	x, y = vec
+	return (1 + (x + y + 1)**2 * (19 - 14*x + 3*x**2 - 14*y + 6*x*y + 3*y**2) ) + \
+			(30 + (2*x - 3*y)**2 * (18 - 32*x + 12*x**2 + 48*y - 36*x*y + 27*y**2) )
+
+def Booth(vec):
+	x, y = vec
+	return (x + 2*y - 7)**2 + (2*x + y - 5)**2 + 1
+
 
 #--- EM calculation -----------------------------------------------------------------
+
 def calcMLEs(x):
 	n = len(data)
 	tn = data[n-1] 
@@ -103,7 +126,6 @@ def NM(estimates):
 	'''
 	Newton's method
 	'''
-	ts = time.time()
 	bMLEinit, cMLEinit = estimates
 	try:
 		result = scipy.optimize.newton(calcMLEs,x0=(bMLEinit,cMLEinit), fprime=calcMLEsSecondorder, tol=1e-10, maxiter=10000, full_output=True)
@@ -115,6 +137,7 @@ def NM(estimates):
 
 
 #--- ECM calculation ----------------------------------------------------------------
+
 def logL(b,c):
 	n = len(data)
 	tn = data[n-1]
@@ -158,6 +181,9 @@ def ECM(estimates):
 		converged = False
 	#print(time.time() - ts, "ECM")
 	return roots, converged
+
+
+# ------------ SCIPY METHODS -----------------------------------------------------
 
 def nelder_mead(x):
 	r = scipy.optimize.minimize(models[model]['objective'], x, method='Nelder-Mead', tol=1e-10, options={'maxiter':100})
@@ -204,22 +230,14 @@ models = {
 		"objective":	RLLWei,
 		"dimensions":	2,
 		"search_space":	[0.000001,1-0.000001],
-		"estimates":	[
-							[0.1, 0.1],
-							[0.9, 0.1]#[404/1000000, 1],
-						],
+		"estimates":	[ [0.1, 0.1],[0.9, 0.1] ],
 		"result":		966.0803348790324
 	},
 	"Covariate":{
 		"objective":	RLLCV,
 		"dimensions":	4,
-		"search_space":	[0.000001,1-0.000001],
-		"estimates":	[
-							[0.2, 0.2],
-							[0.2, 0.2],
-							[0.2, 0.2],
-							[0.2, 0.2]
-						],#[0.1,0,0,0],
+		"search_space":	[0.00000001,1-0.00000001],
+		"estimates":	[ [0.2, 0.2], [0.2, 0.2], [0.2, 0.2], [0.2, 0.2] ],
 		"result":		23.0067
 	},
 	"Sphere":{
@@ -229,25 +247,41 @@ models = {
 		"estimates":	[[ 0, 1] for i in range(2)],
 		"result":		1
 	},
-	"Hill":{
-		"objective":	hill,
-		"dimensions":	10,
-		"search_space":	[-15,15],
-		"estimates":	[[ 2, -2] for i in range(10)],
-		"result":		1
+	"Rastrigin":{
+		"objective":	Rastrigin,
+		"dimensions":	30,
+		"search_space":	[-5,5],
+		"estimates":	[[ 0, 5] for i in range(30)],
+		"result":		1	# added 1 to eval to calculate error
+	},
+	"Ackley":{
+		"objective":	Ackley,
+		"dimensions":	2,
+		"search_space":	[-5,5],
+		"estimates":	[[ 0, 5] for i in range(2)],
+		"result":		1	# added 1 to eval to calculate error
+	},
+	"Beale":{
+		"objective":	Beale,
+		"dimensions":	2,
+		"search_space":	[-5,5],
+		"estimates":	[[ 0, 5] for i in range(2)],
+		"result":		1	# added 1 to eval to calculate error
+	},
+	"GoldsteinPrice":{
+		"objective":	GoldsteinPrice,
+		"dimensions":	2,
+		"search_space":	[-5,5],
+		"estimates":	[[ 0, 5] for i in range(2)],
+		"result":		3	# added 1 to eval to calculate error
+	},
+	"GoldsteinPrice":{
+		"objective":	Booth,
+		"dimensions":	2,
+		"search_space":	[-5,5],
+		"estimates":	[[ 0, 5] for i in range(2)],
+		"result":		1	# added 1 to eval to calculate error
 	}
-}
+	# TODO - MATYAS FNS DOWN
 
-if __name__ == "__main__":
-	#print(RLLWei([404/1000000, 1]))
-	root, converged = NM([1.00000000e-06, 4.96929036e-01])
-	print("-- NM --")
-	print(root)
-	print(RLLWei(root))
-	print(converged)
-	print("-- ECM --")
-	# ecm_root, ecm_converged = ECM([2.0, 2.0])
-	ecm_root, ecm_converged = ECM([1.00000000e-06, 8.66658832e-02])
-	print(ecm_root)
-	print(RLLWei(ecm_root))
-	print(ecm_converged)
+}

@@ -225,6 +225,13 @@ def trustncg(x):
 	r = scipy.optimize.minimize(models[model]['objective'], x, method='trust-ncg', tol=1e-10, options={'maxiter':100})
 	return r.x, r.success
 
+
+
+
+
+
+# ------------ FORMATTED / ESTIMATES -----------------------------------------------------
+
 models = {
 	"Weibull":{
 		"objective":	RLLWei,
@@ -247,13 +254,29 @@ models = {
 		"estimates":	[[ 0, 1] for i in range(2)],
 		"result":		1
 	},
-	"Rastrigin":{
+
+	"Rastrigin10":{
+		"objective":	Rastrigin,
+		"dimensions":	10,
+		"search_space":	[-5,5],
+		"estimates":	[[ 0, 5] for i in range(10)],
+		"result":		1	# added 1 to eval to calculate error
+	},
+	"Rastrigin20":{
+		"objective":	Rastrigin,
+		"dimensions":	20,
+		"search_space":	[-5,5],
+		"estimates":	[[ 0, 5] for i in range(20)],
+		"result":		1	# added 1 to eval to calculate error
+	},
+	"Rastrigin30":{
 		"objective":	Rastrigin,
 		"dimensions":	30,
 		"search_space":	[-5,5],
 		"estimates":	[[ 0, 5] for i in range(30)],
 		"result":		1	# added 1 to eval to calculate error
 	},
+
 	"Ackley":{
 		"objective":	Ackley,
 		"dimensions":	2,

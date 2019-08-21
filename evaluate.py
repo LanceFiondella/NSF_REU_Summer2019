@@ -17,8 +17,8 @@ import bat, bee, cuckoo, firefly, fish, pollination, pso, wolf
 
 #---- NSGA SETTINGS ------------------------------
 
-nsga_max_gens = 64				# number of generations in NSGA-II
-nsga_pop_size = 128 				# how many combinations there are, must be even
+nsga_max_gens = 32				# number of generations in NSGA-II
+nsga_pop_size = 64 				# how many combinations there are, must be even
 nsga_p_cross = 0.98				# mutation crossover probability
 nsga_fn_evals = 16				# how many evaluations to average
 nsga_bpp = 32 					# bits / precision to use for each parameter
@@ -26,7 +26,7 @@ nsga_cross_breed = False		# allow algorithms to change during the process
 nsga_free_range = False			# sets all parameter ranges to 0.5 +- 0.5 instead of predefined (needs more gens)
 nsga_cross_head_tail = True		# uses head/tail crossover instead of random bits
 
-model = models.models[sys.argv[1] if len(sys.argv) > 1 else 'Covariate']
+model = models.models[sys.argv[1] if __name__ == "__main" else "Covariate"]
 model_pop_count = [22, 16]		# pop size for method
 model_generations = [22, 16]	# generations used in method
 
@@ -152,17 +152,6 @@ def search(max_gens, pop_size, p_cross, result_block = None):
 
 	for gen in range(max_gens):				# begin generational aspect
 
-		
-		t = {'NONE':0}								# code to visualize population percentages of each algorithm
-		for i in [ x[:-3] for x in os.listdir('algorithms') if x[-3:] == '.py']:
-			t[i] = 0
-		for p in pop:
-			_,b,_,_ = decode(p["bitstring"])
-			m = b.__module__ if b != None else 'NONE'
-			t[m] += 1
-		algs.append(t)
-		
-
 		union = pop + children				# sort union of parent/child pops, create new pop based on least dominated
 		fronts = fast_nondominated_sort(union)
 		parents = select_parents(fronts, pop_size)
@@ -175,11 +164,9 @@ def search(max_gens, pop_size, p_cross, result_block = None):
 		children = reproduce(selected, pop_size, p_cross)
 
 		calculate_measures(children, gen, max_gens)
-		snapshots.append([(t['bitstring'], t['objectives']) for t in children])
-		res.append([t['objectives'] for t in children])
-		pops.append([(len(decode(t['bitstring'])[3][3]),np.prod(t['objectives'])) for t in children])
-		gens.append([(decode(t['bitstring'])[3][2],np.prod(t['objectives'])) for t in children])
 
+		snapshots.append([(t['bitstring'], t['objectives']) for t in children])
+											# take a snapshot of bitstrings and objective values
 
 	union = pop + children
 	fronts = fast_nondominated_sort(union)
@@ -457,230 +444,40 @@ def select_parents(fronts, pop_size):
 	return offspring
 
 # ---------- DONE, RUN SEARCH ALGORITHM -------------------------------------------------------------
+if __name__ == "__main__":
+	snapshots = []
 
-''' MULTITHREAD SEARCH TO FIND FRONTRUNNERS
-qu = mp.Queue(100)
-threads = []
-t = time.time()
-
-for i in range(100):
-	thread = mp.Process(target = search, args = (nsga_max_gens, nsga_pop_size, nsga_p_cross, qu))
-	threads.append(thread)
-	thread.start()
-
-populations = [qu.get() for i in range(100)]
-
-for thread in threads:
-	thread.join()
-
-print(len(populations))
-print('done')
-
-frontrunners = []
-for p in populations:
-	frontrunners.append(min(p, key = lambda x: (x['objectives'][1], x['objectives'][0]) ).copy())
-pop = populations[0]
-#finals = []
-#res = []
-#algs = []
-#pops = []
-#gens = []
-#pop = search(nsga_max_gens, nsga_pop_size, nsga_p_cross)
-#	frontrunners.append(min(pop, key = lambda x: (x['objectives'][1], x['objectives'][0]) ).copy())
-#	print(f"done iteration {i+1}")
-#finals.append(algs[-1])
-#algs = finals
-print("done!\n")
-'''
-
-''' 
-times = 0
-for i in range(100):
+	t = time.time()
 	pop = search(nsga_max_gens, nsga_pop_size, nsga_p_cross)
-	best = min(pop, key = lambda x: (x["objectives"][1], x["objectives"][0]))
-	species = [decode(x['bitstring'])[1] for x in pop]
-	most_frq = max(set(species), key = species.count)
-	_, spc, _, _ = decode(best['bitstring'])
-	if spc == most_frq:
-		times += 1
-print(times/100)
-'''
-res = []
-pops = []
-gens = []
-algs = []
-snapshots = []
+	t = time.time() - t
 
-t = time.time()
-pop = search(nsga_max_gens, nsga_pop_size, nsga_p_cross)
-t = time.time() - t
-print(f'done! {str(int(np.floor(t/3600))).zfill(2)}:{str(int(np.floor(t/60) % 60)).zfill(2)}:{str(int(np.floor(t) % 60)).zfill(2)}')
-# ----------- VISUALIZATION -------------------------------------------------------------------------
+	print(f'done! {str(int(np.floor(t/3600))).zfill(2)}:{str(int(np.floor(t/60) % 60)).zfill(2)}:{str(int(np.floor(t) % 60)).zfill(2)}')
 
-pop.sort(key = lambda x: (x["objectives"][1], x["objectives"][0]))	# sort by conv then time
-
-colors = {
-	'bat':		'#020202',
-	'bee':		'#bbaf22',
-	'cuckoo':	'#ec994a',
-	'firefly': 	'#ff0000',
-	'fish':		'#3d7bff',
-	'pollination':'#ff3dff',
-	'pso':		'#3dd6ff',
-	'wolf':		'#e03e3e',
-	'NONE':		'#00aa00'
-}
-
-sep = "\t"
-
-print('\033[4m' + sep.join(['runtime', 'avg conv', 'algo', 'conv method', 'gens', 'pop', 'algo params', 'init estimate score']) + "\\\\" + '\033[0m')
-for p in pop:
-	r, r2, r3, params = decode(p["bitstring"])
-	n = r2.__module__ if r2 != None else "NONE"
-	c = colors[n]
-
-	print(sep.join([str(round(x,12)).ljust(12, ' ') for x in p["objectives"]]), end=sep)
-	print(f"{n[:6] if r2 != None else 'NONE'}{sep}{r3.__name__[:6] }{sep}{params[2] if r2 != None else 'n/a'}{sep}{len(params[3])if r2 != None else 'n/a'}", end=sep)
-
-	if r2 != None:
-		for i in params[5:]:
-			print(round(i,3), end=sep)
-	print("\\\\")
-
-	#plt.title("1+ep vs time")
-	#plt.plot(p["objectives"][0],p["objectives"][1],c+"o")
+	# ----------- VISUALIZATION -------------------------------------------------------------------------
 
 
-''' NONE TYPES GRAPH
-types = {}
-for p in pop:
-	ptype, conv = decode(p['bitstring'])[1:][:2]
-	if ptype == None:
-		conv = conv.__name__
-		if conv in types:
-			types[conv] += 1
-		else:
-			types[conv] = 1
-plt.bar(list(range(len(types))),
-		[types[x] for x in types],
-		tick_label = [str(x) for x in types.keys()])	
-plt.show()
-'''
+	with open(sys.argv[2] ,"w") as f:
+		f.write(f"pops = {str(snapshots)}")
 
+					# WRITE OUTPUTS TO CSV
+	with open('output_populations.csv','w') as csvfile:
+		writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+		writer.writerow([f"NSGA GENS: {nsga_max_gens}",f"NSGA POP: {nsga_pop_size}",f"NSGA CROSSOVER: {nsga_p_cross}",f"NSGA AVG EVALS: {nsga_fn_evals}",f"NSGA CROSSBREED: {nsga_cross_breed}"])
+		writer.writerow([f"MODEL: {[x for x in models.models if models.models[x]==model][0]}", f"MODEL POP: {model_pop_count}", f"MODEL GENS: {model_generations}"])
+		writer.writerow([])
+		writer.writerow(["algorithm", "convergence mtd", "runtime", "AVG error", "BEST error", "best candidate's model parameters", "score of best"])
+		for p in pop:
+			r, r2, r3, params = decode(p["bitstring"])
+			pop_size = len(params[3])
+			rep = list(params)
+			rep[3] = [						# generate population, pseudorandom
+					[t[0] + t[1]*np.random.uniform(-1, 1) for t in model["estimates"]]
+					for x in range(pop_size)]
 
-''' PLOT RUNTIME CHANGES OVER DIFFERENT RUNS
-for idx, pop in enumerate(pops):
-	for p in pop:
-		plt.plot(idx+2, p['objectives'][0], 'r*')
-	plt.plot(idx+2, sum([x['objectives'][0] for x in pop])/nsga_pop_size, 'b')
-	print(len(pop))
+			params = tuple(rep)
 
-plt.show()
-'''
-
-
-''' PLOT FRONTRUNNERS OF 100 RUNS
-names = [x[:-3] for x in os.listdir('algorithms') if x[-3:] == '.py']
-names.append('NONE')
-prog = {}
-for n in names:
-	prog[n] = 0
-for p in frontrunners:
-	_, s2, _, _ = decode(p["bitstring"])
-	s2 = s2.__module__ if s2 != None else "NONE"
-	if s2 != None:
-		prog[s2] += 1
-	else:
-		prog['NONE'] += 1
-klist = list(prog.keys()).copy()
-for t in klist:
-	if prog[t] == 0:
-		del prog[t]
-keys = prog.keys()
-values = [prog[x] for x in keys]
-plt.bar(list(range(len(keys))), values, align='center', alpha = 0.5)
-plt.xticks(list(range(len(keys))), keys)
-plt.ylabel('Frontrunner algorithm type (100 gens)')
-plt.show()
-'''
-
-
-''' 			PLOT SIZE AND GENERATIONS VS ITERATIONS
-plt.plot([sum([x[0] for x in l])/len(l) for l in pops] , 'b', label='pop size')
-plt.plot([sum([x[0] for x in l])/len(l) for l in gens], 'r', label='gen count')
-plt.title('Population Size & Swarm Generations vs Iterations (Average)')
-plt.legend(loc='best')
-plt.show()
-'''
-
-
-'''				PLOT TIME/EPSILON VS ITERATIONS
-ers = []
-tss = []
-for iteration, pt in enumerate(res):
-	er = 0
-	ts = 0
-	c = 1
-	for memb in pt:
-		plt.plot(iteration, memb[0],'r*')
-		ts += memb[0]
-		if (not np.isnan(memb[1])) and (0 < memb[1] < 3):
-			plt.plot(iteration, memb[1]-1,'b*')
-			er += memb[1]-1
-			c += 1
-	er /= c
-	ts /= len(pt)
-	ers.append(er)
-	tss.append(ts)
-plt.plot(tss, 'r',label='time')
-plt.plot(ers, 'b', label='epsilon')
-plt.title('Time & Error vs Iterations')
-plt.legend(loc='best')
-plt.show()
-'''
-
-
-names = [x[:-3] for x in os.listdir('algorithms') if x[-3:] == '.py']
-names.append('NONE')
-prog = {}
-for n in names:
-	prog[n] = [x[n] for x in algs]
-for n in names:
-	plt.plot([l/nsga_pop_size for l in prog[n]],colors[n],label=n)
-plt.title('Algorithm percentage of population vs Iterations')
-plt.legend(loc='best')
-plt.show()
-
-
-for p in pop:
-	plt.plot(p['objectives'][0], p['objectives'][1], 'b*')
-plt.title('Error vs Runtime Pareto Front')
-plt.xlabel('Runtime (s)')
-plt.ylabel('1+epsilon error')
-plt.show()
-
-with open("bitstrings.txt","w") as f:
-	f.write(str(snapshots))
-
-				# WRITE OUTPUTS TO CSV
-with open('output_populations.csv','w') as csvfile:
-	writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-	writer.writerow([f"NSGA GENS: {nsga_max_gens}",f"NSGA POP: {nsga_pop_size}",f"NSGA CROSSOVER: {nsga_p_cross}",f"NSGA AVG EVALS: {nsga_fn_evals}",f"NSGA CROSSBREED: {nsga_cross_breed}"])
-	writer.writerow([f"MODEL: {[x for x in models.models if models.models[x]==model][0]}", f"MODEL POP: {model_pop_count}", f"MODEL GENS: {model_generations}"])
-	writer.writerow([])
-	writer.writerow(["algorithm", "convergence mtd", "runtime", "AVG error", "BEST error", "best candidate's model parameters", "score of best"])
-	for p in pop:
-		r, r2, r3, params = decode(p["bitstring"])
-		pop_size = len(params[3])
-		rep = list(params)
-		rep[3] = [						# generate population, pseudorandom
-				[t[0] + t[1]*np.random.uniform(-1, 1) for t in model["estimates"]]
-				for x in range(pop_size)]
-
-		params = tuple(rep)
-
-		newl = r2(*params) if r2 != None else rep[3]
-		bst = min(newl, key = model['objective'])
-		rs, con = r3(bst)
-		sc = model['objective'](rs) / model['result']
-		writer.writerow([r2.__module__ if r2 != None else 'NONE', r3.__name__, p["objectives"][0],p["objectives"][1], sc, rs, model["objective"](rs)])
+			newl = r2(*params) if r2 != None else rep[3]
+			bst = min(newl, key = model['objective'])
+			rs, con = r3(bst)
+			sc = model['objective'](rs) / model['result']
+			writer.writerow([r2.__module__ if r2 != None else 'NONE', r3.__name__, p["objectives"][0],p["objectives"][1], sc, rs, model["objective"](rs)])

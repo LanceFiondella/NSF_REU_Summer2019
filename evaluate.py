@@ -26,7 +26,6 @@ nsga_cross_breed = False		# allow algorithms to change during the process
 nsga_free_range = False			# sets all parameter ranges to 0.5 +- 0.5 instead of predefined (needs more gens)
 nsga_cross_head_tail = True		# uses head/tail crossover instead of random bits
 
-model = models.models[sys.argv[1] if __name__ == "__main" else "Covariate"]
 model_pop_count = [22, 16]		# pop size for method
 model_generations = [22, 16]	# generations used in method
 
@@ -445,6 +444,12 @@ def select_parents(fronts, pop_size):
 
 # ---------- DONE, RUN SEARCH ALGORITHM -------------------------------------------------------------
 if __name__ == "__main__":
+	if len(sys.argv) > 1 and sys.argv[1] in models.models:
+		model = models.models[sys.argv[1]]
+	else:
+		print(f"Available models: {', '.join(models.models)}")
+		sys.exit()
+
 	snapshots = []
 
 	t = time.time()

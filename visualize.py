@@ -1,7 +1,9 @@
 import importlib, sys
 from evaluate import *
 from matplotlib import pyplot as plt
-pop_module = importlib.import_module(sys.argv[1])
+from numpy import inf
+
+pop_module = __import__(sys.argv[1])
 
 
 colors = {

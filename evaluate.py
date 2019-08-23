@@ -460,7 +460,12 @@ if __name__ == "__main__":
 
 	# ----------- VISUALIZATION -------------------------------------------------------------------------
 
-
+	for gen, g in enumerate(snapshots):
+		for pidx, p in enumerate(g):
+			for idx, val in enumerate(p):
+				if val == float('inf'):
+					print('inf found')
+					snapshots[gen][pidx][idx] = 'inf'
 	with open(sys.argv[2] ,"w") as f:
 		f.write(f"pops = {str(snapshots)}")
 

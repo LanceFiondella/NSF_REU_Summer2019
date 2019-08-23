@@ -33,70 +33,35 @@ model_generations = [22, 16]	# generations used in method
 stage1 = [lambda x: x]*2
 stage2 = [	{	
 				"algo":	firefly.search,
-				"params":[
-					[0.95, 0.05],
-					[0.96, 0.04]
-				]
+				"params":[ [0.95, 0.05], [0.96, 0.04] ]
 			},
-			{						# algo points to search function in swarm file
-				"algo":	pso.search,
-				"params":[			# contains all constant parameters in terms of 
-					[0.5, 0.15],	# [A, B] where the passed value is A + B*f(bits)
-					[0.1, 0.05],	
-					[0.1, 0.05]
-				]
+			{						# contains all constant parameters in terms of 
+				"algo":	pso.search, # [A, B] where the passed value is A + B*f(bits)
+				"params":[ [0.5, 0.15], [0.1, 0.05], [0.1, 0.05] ]
 			},
 			{
 				"algo": cuckoo.search,
-				"params":[
-					[0.97, 0.03],
-					[0.97, 0.03],
-					[0.25, 0.1]
-				]
+				"params":[ [0.97, 0.03], [0.97, 0.03], [0.25, 0.1] ]
 			},
 			{
 				"algo": bat.search,
-				"params":[
-					[0.1, 0.1],
-					[0.9, 0.1],
-					[0.9, 0.08],
-					[0.8, 0.15]
-
-				]
+				"params":[ [0.1, 0.1], [0.9, 0.1], [0.9, 0.08], [0.8, 0.15] ]
 			},
 			{
 				"algo": bee.search,
-				"params":[
-					[0.33, 0.10],
-					[0.33, 0.10],
-					[0.50, 0.25],
-					[0.50, 0.25],
-					[0.20, 0.10]
-				]
+				"params":[ [0.33, 0.10], [0.33, 0.10], [0.50, 0.25], [0.50, 0.25], [0.20, 0.10] ]
 			},
 			{
 				"algo":	pollination.search,
-				"params":[
-					[0.7, 0.2]
-				]
+				"params":[ [0.7, 0.2] ]
 			},
 			{
 				"algo": fish.search,
-				"params":[
-					[0.125, 0.075],
-					[4, 2],
-					[0.125, 0.075],
-					[2, 1],
-				]
+				"params":[ [0.125, 0.075], [4, 2], [0.125, 0.075], [2, 1]  ]
 			},
 			{
 				"algo": wolf.search,
-				"params":[
-					[0.5, 0.1],
-					[0.85, 0.15],
-					[0.5, 0.1],
-					[0.9, 0.075]
-				]
+				"params":[ [0.5, 0.1], [0.85, 0.15], [0.5, 0.1], [0.9, 0.075] ]
 			},
 			{
 				"algo": None,
@@ -110,9 +75,9 @@ stage3 = [
 			models.bfgs, 
 			models.lbfgsb, 
 			models.tnc, 
-			#models.cobyla, 
 			models.slsqp 
-			#models.dogleg 
+			#models.cobyla, 	# derivative-based methods
+			#models.dogleg, 
 			#models.trustncg
 		]
 
@@ -441,6 +406,7 @@ def select_parents(fronts, pop_size):
 		fronts[last_front].sort(key = lambda x: (x["rank"], x["dist"]))
 		offspring += fronts[last_front][0:remaining]
 	return offspring
+
 
 # ---------- DONE, RUN SEARCH ALGORITHM -------------------------------------------------------------
 if __name__ == "__main__":

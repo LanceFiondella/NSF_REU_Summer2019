@@ -5,7 +5,6 @@ from numpy import inf
 
 pop_module = __import__(sys.argv[1])
 
-
 colors = {
 	'bat':		'#020202',
 	'bee':		'#bbaf22',
@@ -62,6 +61,7 @@ for p in pop:
 plt.bar(list(range(len(types))),
 		[types[x] for x in types],
 		tick_label = [str(x) for x in types.keys()])	
+plt.title('Subset of NONE types')
 plt.show()
 
 
@@ -70,10 +70,11 @@ for idx, pop in enumerate(pops):	# plot runtime changes per generation
 	for p in pop:
 		plt.plot(idx+2, p['objectives'][0], 'r*')
 	plt.plot(idx+2, sum([x['objectives'][0] for x in pop])/nsga_pop_size, 'b')
+plt.title('All runtimes versus generation')
 plt.show()
 
 
-'''									# plot best candidates of all runs
+'''#								# plot best candidates of all runs
 names = [x[:-3] for x in os.listdir('algorithms') if x[-3:] == '.py']
 names.append('NONE')
 prog = {}
@@ -94,12 +95,12 @@ keys = prog.keys()
 values = [prog[x] for x in keys]
 plt.bar(list(range(len(keys))), values, align='center', alpha = 0.5)
 plt.xticks(list(range(len(keys))), keys)
-plt.ylabel('Frontrunner algorithm type (100 gens)')
+plt.ylabel('Frontrunner algorithm type')
 plt.show()
 '''
 
 
-''' 			PLOT SIZE AND GENERATIONS VS ITERATIONS
+'''# 			PLOT SIZE AND GENERATIONS VS ITERATIONS
 plt.plot([sum([x[0] for x in l])/len(l) for l in pops] , 'b', label='pop size')
 plt.plot([sum([x[0] for x in l])/len(l) for l in gens], 'r', label='gen count')
 plt.title('Population Size & Swarm Generations vs Iterations (Average)')
@@ -160,7 +161,25 @@ plt.show()
 				# plot pareto curve
 for p in pop:
 	plt.plot(p['objectives'][0], p['objectives'][1], 'b*')
+
+plt.ylim([0.99, 1.1])
+plt.xlim([0,0.025])
 plt.title('Error vs Runtime Pareto Front')
 plt.xlabel('Runtime (s)')
 plt.ylabel('1+epsilon error')
+plt.show()
+
+
+front0 = []
+front1 = []
+for iteration, popu in enumerate(pops):
+	front = min(popu, key=lambda x: x['objectives'][0]*x['objectives'][1])
+	front0.append(front['objectives'][0]*30)
+	front1.append(front['objectives'][1]-1)
+
+plt.plot(front0, 'b', label='runtime')
+plt.plot(front1, 'r', label='error')
+
+plt.title('Frontrunner accuracy and runtime')
+plt.legend()
 plt.show()

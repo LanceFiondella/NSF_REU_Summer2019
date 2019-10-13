@@ -200,7 +200,7 @@ def calculate_measures(pop, gen=None, maxgen=None):
 	print(' '*col, end='\r')
 
 
-def decode(bitstring):
+def decode(bitstring, model = models.models[sys.argv[2]]):
 	'''
 	Takes some bit-pattern (some member of the population),
 	gives back the corresponding algorithms (phase 1, 2, 3)

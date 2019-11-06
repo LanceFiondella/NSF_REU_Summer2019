@@ -254,28 +254,699 @@ models = {
 		"estimates":	[[ 0, 1] for i in range(2)],
 		"result":		1
 	},
-
-	"Rastrigin10":{
-		"objective":	Rastrigin,
-		"dimensions":	10,
-		"search_space":	[-5,5],
-		"estimates":	[[ 0, 5] for i in range(10)],
-		"result":		1	# added 1 to eval to calculate error
-	},
-	"Rastrigin20":{
-		"objective":	Rastrigin,
-		"dimensions":	20,
-		"search_space":	[-5,5],
-		"estimates":	[[ 0, 5] for i in range(20)],
-		"result":		1	# added 1 to eval to calculate error
-	},
-	"Rastrigin30":{
-		"objective":	Rastrigin,
-		"dimensions":	30,
-		"search_space":	[-5,5],
-		"estimates":	[[ 0, 5] for i in range(30)],
-		"result":		1	# added 1 to eval to calculate error
-	},
+    "Rastrigin2":{
+            "objective":    Rastrigin,
+            "dimensions":   2,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(2)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin3":{
+            "objective":    Rastrigin,
+            "dimensions":   3,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(3)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin4":{
+            "objective":    Rastrigin,
+            "dimensions":   4,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(4)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin5":{
+            "objective":    Rastrigin,
+            "dimensions":   5,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(5)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin6":{
+            "objective":    Rastrigin,
+            "dimensions":   6,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(6)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin7":{
+            "objective":    Rastrigin,
+            "dimensions":   7,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(7)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin8":{
+            "objective":    Rastrigin,
+            "dimensions":   8,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(8)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin9":{
+            "objective":    Rastrigin,
+            "dimensions":   9,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(9)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin10":{
+            "objective":    Rastrigin,
+            "dimensions":   10,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(10)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin11":{
+            "objective":    Rastrigin,
+            "dimensions":   11,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(11)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin12":{
+            "objective":    Rastrigin,
+            "dimensions":   12,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(12)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin13":{
+            "objective":    Rastrigin,
+            "dimensions":   13,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(13)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin14":{
+            "objective":    Rastrigin,
+            "dimensions":   14,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(14)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin15":{
+            "objective":    Rastrigin,
+            "dimensions":   15,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(15)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin16":{
+            "objective":    Rastrigin,
+            "dimensions":   16,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(16)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin17":{
+            "objective":    Rastrigin,
+            "dimensions":   17,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(17)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin18":{
+            "objective":    Rastrigin,
+            "dimensions":   18,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(18)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin19":{
+            "objective":    Rastrigin,
+            "dimensions":   19,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(19)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin20":{
+            "objective":    Rastrigin,
+            "dimensions":   20,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(20)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin21":{
+            "objective":    Rastrigin,
+            "dimensions":   21,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(21)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin22":{
+            "objective":    Rastrigin,
+            "dimensions":   22,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(22)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin23":{
+            "objective":    Rastrigin,
+            "dimensions":   23,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(23)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin24":{
+            "objective":    Rastrigin,
+            "dimensions":   24,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(24)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin25":{
+            "objective":    Rastrigin,
+            "dimensions":   25,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(25)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin26":{
+            "objective":    Rastrigin,
+            "dimensions":   26,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(26)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin27":{
+            "objective":    Rastrigin,
+            "dimensions":   27,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(27)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin28":{
+            "objective":    Rastrigin,
+            "dimensions":   28,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(28)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin29":{
+            "objective":    Rastrigin,
+            "dimensions":   29,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(29)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin30":{
+            "objective":    Rastrigin,
+            "dimensions":   30,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(30)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin31":{
+            "objective":    Rastrigin,
+            "dimensions":   31,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(31)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin32":{
+            "objective":    Rastrigin,
+            "dimensions":   32,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(32)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin33":{
+            "objective":    Rastrigin,
+            "dimensions":   33,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(33)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin34":{
+            "objective":    Rastrigin,
+            "dimensions":   34,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(34)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin35":{
+            "objective":    Rastrigin,
+            "dimensions":   35,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(35)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin36":{
+            "objective":    Rastrigin,
+            "dimensions":   36,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(36)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin37":{
+            "objective":    Rastrigin,
+            "dimensions":   37,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(37)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin38":{
+            "objective":    Rastrigin,
+            "dimensions":   38,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(38)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin39":{
+            "objective":    Rastrigin,
+            "dimensions":   39,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(39)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin40":{
+            "objective":    Rastrigin,
+            "dimensions":   40,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(40)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin41":{
+            "objective":    Rastrigin,
+            "dimensions":   41,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(41)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin42":{
+            "objective":    Rastrigin,
+            "dimensions":   42,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(42)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin43":{
+            "objective":    Rastrigin,
+            "dimensions":   43,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(43)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin44":{
+            "objective":    Rastrigin,
+            "dimensions":   44,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(44)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin45":{
+            "objective":    Rastrigin,
+            "dimensions":   45,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(45)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin46":{
+            "objective":    Rastrigin,
+            "dimensions":   46,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(46)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin47":{
+            "objective":    Rastrigin,
+            "dimensions":   47,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(47)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin48":{
+            "objective":    Rastrigin,
+            "dimensions":   48,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(48)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin49":{
+            "objective":    Rastrigin,
+            "dimensions":   49,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(49)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin50":{
+            "objective":    Rastrigin,
+            "dimensions":   50,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(50)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin51":{
+            "objective":    Rastrigin,
+            "dimensions":   51,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(51)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin52":{
+            "objective":    Rastrigin,
+            "dimensions":   52,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(52)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin53":{
+            "objective":    Rastrigin,
+            "dimensions":   53,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(53)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin54":{
+            "objective":    Rastrigin,
+            "dimensions":   54,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(54)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin55":{
+            "objective":    Rastrigin,
+            "dimensions":   55,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(55)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin56":{
+            "objective":    Rastrigin,
+            "dimensions":   56,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(56)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin57":{
+            "objective":    Rastrigin,
+            "dimensions":   57,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(57)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin58":{
+            "objective":    Rastrigin,
+            "dimensions":   58,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(58)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin59":{
+            "objective":    Rastrigin,
+            "dimensions":   59,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(59)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin60":{
+            "objective":    Rastrigin,
+            "dimensions":   60,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(60)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin61":{
+            "objective":    Rastrigin,
+            "dimensions":   61,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(61)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin62":{
+            "objective":    Rastrigin,
+            "dimensions":   62,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(62)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin63":{
+            "objective":    Rastrigin,
+            "dimensions":   63,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(63)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin64":{
+            "objective":    Rastrigin,
+            "dimensions":   64,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(64)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin65":{
+            "objective":    Rastrigin,
+            "dimensions":   65,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(65)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin66":{
+            "objective":    Rastrigin,
+            "dimensions":   66,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(66)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin67":{
+            "objective":    Rastrigin,
+            "dimensions":   67,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(67)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin68":{
+            "objective":    Rastrigin,
+            "dimensions":   68,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(68)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin69":{
+            "objective":    Rastrigin,
+            "dimensions":   69,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(69)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin70":{
+            "objective":    Rastrigin,
+            "dimensions":   70,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(70)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin71":{
+            "objective":    Rastrigin,
+            "dimensions":   71,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(71)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin72":{
+            "objective":    Rastrigin,
+            "dimensions":   72,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(72)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin73":{
+            "objective":    Rastrigin,
+            "dimensions":   73,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(73)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin74":{
+            "objective":    Rastrigin,
+            "dimensions":   74,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(74)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin75":{
+            "objective":    Rastrigin,
+            "dimensions":   75,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(75)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin76":{
+            "objective":    Rastrigin,
+            "dimensions":   76,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(76)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin77":{
+            "objective":    Rastrigin,
+            "dimensions":   77,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(77)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin78":{
+            "objective":    Rastrigin,
+            "dimensions":   78,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(78)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin79":{
+            "objective":    Rastrigin,
+            "dimensions":   79,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(79)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin80":{
+            "objective":    Rastrigin,
+            "dimensions":   80,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(80)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin81":{
+            "objective":    Rastrigin,
+            "dimensions":   81,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(81)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin82":{
+            "objective":    Rastrigin,
+            "dimensions":   82,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(82)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin83":{
+            "objective":    Rastrigin,
+            "dimensions":   83,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(83)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin84":{
+            "objective":    Rastrigin,
+            "dimensions":   84,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(84)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin85":{
+            "objective":    Rastrigin,
+            "dimensions":   85,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(85)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin86":{
+            "objective":    Rastrigin,
+            "dimensions":   86,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(86)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin87":{
+            "objective":    Rastrigin,
+            "dimensions":   87,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(87)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin88":{
+            "objective":    Rastrigin,
+            "dimensions":   88,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(88)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin89":{
+            "objective":    Rastrigin,
+            "dimensions":   89,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(89)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin90":{
+            "objective":    Rastrigin,
+            "dimensions":   90,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(90)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin91":{
+            "objective":    Rastrigin,
+            "dimensions":   91,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(91)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin92":{
+            "objective":    Rastrigin,
+            "dimensions":   92,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(92)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin93":{
+            "objective":    Rastrigin,
+            "dimensions":   93,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(93)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin94":{
+            "objective":    Rastrigin,
+            "dimensions":   94,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(94)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin95":{
+            "objective":    Rastrigin,
+            "dimensions":   95,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(95)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin96":{
+            "objective":    Rastrigin,
+            "dimensions":   96,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(96)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin97":{
+            "objective":    Rastrigin,
+            "dimensions":   97,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(97)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin98":{
+            "objective":    Rastrigin,
+            "dimensions":   98,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(98)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin99":{
+            "objective":    Rastrigin,
+            "dimensions":   99,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(99)],
+            "result":               1# added 1 to eval to calculate error
+    },
+    "Rastrigin100":{
+            "objective":    Rastrigin,
+            "dimensions":   100,
+            "search_space": [-5,5],
+            "estimates":    [[ 0, 5] for i in range(100)],
+            "result":               1# added 1 to eval to calculate error
+    },
 
 	"Ackley":{
 		"objective":	Ackley,

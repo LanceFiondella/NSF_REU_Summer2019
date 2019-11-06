@@ -17,6 +17,42 @@ colors = {
 	'NONE':		'#00aa00'
 }
 
+def decode(bitstring, model = models.models[sys.argv[2]]):
+	'''
+	Takes some bit-pattern (some member of the population),
+	gives back the corresponding algorithms (phase 1, 2, 3)
+	as well as the parameters passed to ph1
+	'''
+	groups = [bitstring[x*nsga_bpp:][:nsga_bpp] for x in range( int( len(bitstring) / nsga_bpp ) )]
+
+	index_1 = round(bin_signum(groups[0], (len(stage1)-1)/2, (len(stage1)-1)/2))
+	index_2 = round(bin_signum(groups[1], (len(stage2)-1)/2, (len(stage2)-1)/2))
+	index_3 = round(bin_signum(groups[2], (len(stage3)-1)/2, (len(stage3)-1)/2))
+											# get indexes of each stage, by rounding
+											# stage_num / 2 +- stage_num / 2
+
+	pop_size = round(bin_signum(groups[3], model_pop_count[0], model_pop_count[1]))
+	gen_count = round(bin_signum(groups[4], model_generations[0], model_generations[1]))
+											# get bits corresponding to model gens and size
+											# and generate pop size / generations based on values
+
+	model_search_space = [model["search_space"] for i in range(model["dimensions"])]
+
+	params = (model["objective"], model_search_space, gen_count, [0]*pop_size)
+											# get parameters for swarm algorithms
+	param_bits = groups[5:]
+	for idx, prm in enumerate(stage2[index_2]["params"]):
+		this_bits = param_bits[idx]
+											# get part of bitstring corresponding to parameter
+		if nsga_free_range:
+			params += (bin_signum(this_bits, 0.5, 0.5),)
+		else:
+			params += (bin_signum(this_bits, prm[0], prm[1]),)
+
+	return stage1[index_1], stage2[index_2]["algo"], stage3[index_3], params	# send back algorithms & parameters for timing
+
+
+
 pops = []
 			# take pops from file and import to script
 for gen_pop in pop_module.pops:

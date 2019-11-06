@@ -431,7 +431,7 @@ if __name__ == "__main__":
 			for idx, val in enumerate(p):
 				if val == float('inf'):
 					print('inf found')
-					snapshots[gen][pidx][idx] = 'inf'
+					snapshots[gen][pidx][idx] = 99999999 # large number instead of inf
 	with open(sys.argv[2] ,"w") as f:
 		f.write(f"pops = {str(snapshots)}")
 

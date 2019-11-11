@@ -200,12 +200,16 @@ def calculate_measures(pop, gen=None, maxgen=None):
 	print(' '*col, end='\r')
 
 
-def decode(bitstring, model = models.models[sys.argv[1]]):
+def decode(bitstring, model = None):
 	'''
 	Takes some bit-pattern (some member of the population),
 	gives back the corresponding algorithms (phase 1, 2, 3)
 	as well as the parameters passed to ph1
 	'''
+
+	if model == None:
+		model = models.models[sys.argv[1]]
+
 	groups = [bitstring[x*nsga_bpp:][:nsga_bpp] for x in range( int( len(bitstring) / nsga_bpp ) )]
 
 	index_1 = round(bin_signum(groups[0], (len(stage1)-1)/2, (len(stage1)-1)/2))

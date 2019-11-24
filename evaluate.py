@@ -31,42 +31,12 @@ model_generations = [22, 16]	# generations used in method
 
 
 stage1 = [lambda x: x]*2
-stage2 = [	{	
-				"algo":	firefly.search,
-				"params":[ [0.95, 0.05], [0.96, 0.04] ]
-			},
+stage2 = [	
 			{						# contains all constant parameters in terms of 
 				"algo":	pso.search, # [A, B] where the passed value is A + B*f(bits)
 				"params":[ [0.5, 0.15], [0.1, 0.05], [0.1, 0.05] ]
-			},
-			{
-				"algo": cuckoo.search,
-				"params":[ [0.97, 0.03], [0.97, 0.03], [0.25, 0.1] ]
-			},
-			{
-				"algo": bat.search,
-				"params":[ [0.1, 0.1], [0.9, 0.1], [0.9, 0.08], [0.8, 0.15] ]
-			},
-			{
-				"algo": bee.search,
-				"params":[ [0.33, 0.10], [0.33, 0.10], [0.50, 0.25], [0.50, 0.25], [0.20, 0.10] ]
-			},
-			{
-				"algo":	pollination.search,
-				"params":[ [0.7, 0.2] ]
-			},
-			{
-				"algo": fish.search,
-				"params":[ [0.125, 0.075], [4, 2], [0.125, 0.075], [2, 1]  ]
-			},
-			{
-				"algo": wolf.search,
-				"params":[ [0.5, 0.1], [0.85, 0.15], [0.5, 0.1], [0.9, 0.075] ]
-			},
-			{
-				"algo": None,
-				"params":[]
 			}
+
 			]
 stage3 = [
 			models.nelder_mead, 

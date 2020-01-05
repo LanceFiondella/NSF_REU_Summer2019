@@ -17,10 +17,10 @@ import bat, bee, cuckoo, firefly, fish, pollination, pso, wolf
 
 #---- NSGA SETTINGS ------------------------------
 
-nsga_max_gens = 32				# number of generations in NSGA-II
-nsga_pop_size = 64 				# how many combinations there are, must be even
+nsga_max_gens = 128				# number of generations in NSGA-II
+nsga_pop_size = 128				# how many combinations there are, must be even
 nsga_p_cross = 0.98				# mutation crossover probability
-nsga_fn_evals = 16				# how many evaluations to average
+nsga_fn_evals = 32				# how many evaluations to average
 nsga_bpp = 32 					# bits / precision to use for each parameter
 nsga_cross_breed = False		# allow algorithms to change during the process
 nsga_free_range = False			# sets all parameter ranges to 0.5 +- 0.5 instead of predefined (needs more gens)
@@ -116,6 +116,9 @@ def search(max_gens, pop_size, p_cross, result_block = None):
 
 	for gen in range(max_gens):				# begin generational aspect
 
+		if not verbose:
+			print(f"\t{gen+1}/{max_gens}     ",end="\r")
+
 		union = pop + children				# sort union of parent/child pops, create new pop based on least dominated
 		fronts = fast_nondominated_sort(union)
 		parents = select_parents(fronts, pop_size)
@@ -175,11 +178,13 @@ def calculate_measures(pop, gen=None, maxgen=None):
 			
 			params = tuple(expanded) 		# convert back to tuple
 
-			col = int(os.popen('stty size', 'r').read().split()[1])-5
-			print(' ' * col, end='\r')
-			st = f" {str(gen+1).zfill(len(str(maxgen)))}/{maxgen}:" if gen != None else ""
-			st = f"{st}\t > {str(index+1).zfill(len(str(len(pop))))}/{len(pop)} ({str(i+1).zfill(len(str(nsga_fn_evals)))}/{nsga_fn_evals})\t{alg_2.__module__ if (alg_2 != None) else 'NONE'}: {alg_3.__name__} {[round(x,3) for x in params[4:]]}"
-			print(f" {st}", end='\r')
+			if verbose:		#potentially wastes time, careful
+				col = int(os.popen('stty size', 'r').read().split()[1])-5
+				print(' ' * col, end='\r')
+				st = f" {str(gen+1).zfill(len(str(maxgen)))}/{maxgen}:" if gen != None else ""
+				st = f"{st}\t > {str(index+1).zfill(len(str(len(pop))))}/{len(pop)} ({str(i+1).zfill(len(str(nsga_fn_evals)))}/{nsga_fn_evals})\t{alg_2.__module__ if (alg_2 != None) else 'NONE'}: {alg_3.__name__} {[round(x,3) for x in params[4:]]}"
+				print(f" {st}", end='\r')
+
 
 			stime = time.time()
 			lst =  alg_2(*params) if alg_2 != None else params[3]
@@ -422,6 +427,8 @@ if __name__ == "__main__":
 
 	snapshots = []
 
+	verbose = "-v" in sys.argv
+
 	t = time.time()
 	pop = search(nsga_max_gens, nsga_pop_size, nsga_p_cross)
 	t = time.time() - t
@@ -430,6 +437,14 @@ if __name__ == "__main__":
 
 	# ----------- VISUALIZATION -------------------------------------------------------------------------
 
+	with open(sys.argv[2] ,"w") as f:
+		for generation in snapshots:
+			for candidate in generation:	# candidate is tuple of bitstring, array of results
+				f.write( " ".join( [candidate[0], str(candidate[1][0]), str(candidate[1][1])] ) )
+				f.write(" ")
+			f.write(f"\n")
+
+	'''
 	for gen, g in enumerate(snapshots):
 		for pidx, p in enumerate(g):
 			for idx, val in enumerate(p):
@@ -438,6 +453,7 @@ if __name__ == "__main__":
 					snapshots[gen][pidx][idx] = 99999999 # large number instead of inf
 	with open(sys.argv[2] ,"w") as f:
 		f.write(f"pops = {str(snapshots)}")
+	'''
 
 					# WRITE OUTPUTS TO CSV
 	with open('output_populations.csv','w') as csvfile:

@@ -3,8 +3,6 @@ from evaluate import *
 from matplotlib import pyplot as plt
 from numpy import inf
 
-pop_module = __import__(sys.argv[1])
-
 colors = {
 	'bat':		'#020202',
 	'bee':		'#bbaf22',
@@ -17,7 +15,7 @@ colors = {
 	'NONE':		'#00aa00'
 }
 
-def decode(bitstring, model = models.models[sys.argv[2]]):
+def decode(bitstring, model = models.models[sys.argv[1]]):
 	'''
 	Takes some bit-pattern (some member of the population),
 	gives back the corresponding algorithms (phase 1, 2, 3)
@@ -55,11 +53,18 @@ def decode(bitstring, model = models.models[sys.argv[2]]):
 
 pops = []
 			# take pops from file and import to script
-for gen_pop in pop_module.pops:
-	pops.append([])
-	for candidate in gen_pop:
-		formatted = {'bitstring':candidate[0], 'objectives':candidate[1]}
-		pops[-1].append(formatted)
+with open(sys.argv[2]) as f:
+	for gen_line in f:
+		pops.append([])
+		linedata = gen_line.split(" ")
+		candidate_count = len(linedata) / 3	#groups of 3
+		for i in range(int(candidate_count)):
+			pops[-1].append( {'bitstring': linedata[i*3] , 'objectives': [float(linedata[i*3 + 1]), float(linedata[i*3 + 2])] } )
+
+for p in pops:
+	print(p)
+	print()
+	print()
 
 pop = pops[-1]
 

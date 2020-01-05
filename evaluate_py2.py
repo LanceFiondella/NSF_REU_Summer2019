@@ -10,7 +10,7 @@
 # TODO - population density plots but for rastr with d = 10, 20, 30
 
 
-import sys, os, models, csv, multiprocessing as mp, matplotlib.pyplot as plt
+import sys, os, models
 
 sys.path.insert(0, "algorithms")
 import bat, bee, cuckoo, firefly, fish, pollination, pso, wolf

@@ -12,7 +12,7 @@
 
 import sys, os, models, csv, multiprocessing as mp, matplotlib.pyplot as plt
 
-sys.path.insert(0, f"algorithms")
+sys.path.insert(0, "algorithms")
 import bat, bee, cuckoo, firefly, fish, pollination, pso, wolf
 
 #---- NSGA SETTINGS ------------------------------
@@ -117,7 +117,7 @@ def search(max_gens, pop_size, p_cross, result_block = None):
 	for gen in range(max_gens):				# begin generational aspect
 
 		if not verbose:
-			print(f"\t{gen+1}/{max_gens}     ",end="\r")
+			print("\t{}/{}     ".format(gen+1),end="\r")
 
 		union = pop + children				# sort union of parent/child pops, create new pop based on least dominated
 		fronts = fast_nondominated_sort(union)
@@ -177,14 +177,6 @@ def calculate_measures(pop, gen=None, maxgen=None):
 
 			
 			params = tuple(expanded) 		# convert back to tuple
-
-			if verbose:		#potentially wastes time, careful
-				col = int(os.popen('stty size', 'r').read().split()[1])-5
-				print(' ' * col, end='\r')
-				st = f" {str(gen+1).zfill(len(str(maxgen)))}/{maxgen}:" if gen != None else ""
-				st = f"{st}\t > {str(index+1).zfill(len(str(len(pop))))}/{len(pop)} ({str(i+1).zfill(len(str(nsga_fn_evals)))}/{nsga_fn_evals})\t{alg_2.__module__ if (alg_2 != None) else 'NONE'}: {alg_3.__name__} {[round(x,3) for x in params[4:]]}"
-				print(f" {st}", end='\r')
-
 
 			stime = time.time()
 			lst =  alg_2(*params) if alg_2 != None else params[3]
@@ -423,7 +415,6 @@ if __name__ == "__main__":
 	if len(sys.argv) > 1 and sys.argv[1] in models.models:
 		model = models.models[sys.argv[1]]
 	else:
-		print(f"Available models: {', '.join(models.models)}")
 		sys.exit()
 
 	snapshots = []
@@ -443,7 +434,7 @@ if __name__ == "__main__":
 			for candidate in generation:	# candidate is tuple of bitstring, array of results
 				f.write( " ".join( [candidate[0], str(candidate[1][0]), str(candidate[1][1])] ) )
 				f.write(" ")
-			f.write(f"\n")
+			f.write("\n")
 
 	'''
 					# WRITE OUTPUTS TO CSV

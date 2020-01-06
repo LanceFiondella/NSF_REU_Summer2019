@@ -18,10 +18,10 @@ import bat, bee, cuckoo, firefly, fish, pollination, pso, wolf
 #---- NSGA SETTINGS ------------------------------
 
 nsga_max_gens = 128				# number of generations in NSGA-II
-nsga_pop_size = 128				# how many combinations there are, must be even
+nsga_pop_size = 128 			# how many combinations there are, must be even
 nsga_p_cross = 0.98				# mutation crossover probability
-nsga_fn_evals = 32				# how many evaluations to average
-nsga_bpp = 32 					# bits / precision to use for each parameter
+nsga_fn_evals = 16				# how many evaluations to average
+nsga_bpp = 24 					# bits / precision to use for each parameter
 nsga_cross_breed = False		# allow algorithms to change during the process
 nsga_free_range = False			# sets all parameter ranges to 0.5 +- 0.5 instead of predefined (needs more gens)
 nsga_cross_head_tail = True		# uses head/tail crossover instead of random bits
@@ -117,7 +117,7 @@ def search(max_gens, pop_size, p_cross, result_block = None):
 	for gen in range(max_gens):				# begin generational aspect
 
 		if not verbose:
-			print("\t{}/{}     ".format(gen+1),end="\r")
+			print("\t{}/{}     ".format(gen+1, max_gens),end="\r")
 
 		union = pop + children				# sort union of parent/child pops, create new pop based on least dominated
 		fronts = fast_nondominated_sort(union)
@@ -132,7 +132,10 @@ def search(max_gens, pop_size, p_cross, result_block = None):
 
 		calculate_measures(children, gen, max_gens)
 
-		snapshots.append([(t['bitstring'], t['objectives']) for t in children])
+		for candidate in children:	# candidate is tuple of bitstring, array of results
+			outfile.write( " ".join( [candidate['bitstring'], str(candidate['objectives'][0]), str(candidate['objectives'][1])] ) )
+			outfile.write(" ")
+		outfile.write("\n")
 											# take a snapshot of bitstrings and objective values
 
 	union = pop + children
@@ -417,24 +420,19 @@ if __name__ == "__main__":
 	else:
 		sys.exit()
 
-	snapshots = []
-
 	verbose = "-v" in sys.argv
+	outfile = open(sys.argv[2] ,"w")
 
 	t = time.time()
 	pop = search(nsga_max_gens, nsga_pop_size, nsga_p_cross)
 	t = time.time() - t
 
+	outfile.close()
+
 	print("done!")#{str(int(np.floor(t/3600))).zfill(2)}:{str(int(np.floor(t/60) % 60)).zfill(2)}:{str(int(np.floor(t) % 60)).zfill(2)}')
 
 	# ----------- VISUALIZATION -------------------------------------------------------------------------
 
-	with open(sys.argv[2] ,"w") as f:
-		for generation in snapshots:
-			for candidate in generation:	# candidate is tuple of bitstring, array of results
-				f.write( " ".join( [candidate[0], str(candidate[1][0]), str(candidate[1][1])] ) )
-				f.write(" ")
-			f.write("\n")
 
 	'''
 					# WRITE OUTPUTS TO CSV

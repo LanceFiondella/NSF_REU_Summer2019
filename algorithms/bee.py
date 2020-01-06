@@ -41,8 +41,6 @@ def search(objective, search_space, max_gen, pop = None, look_pct = 0.33, exp_pc
 				p["vector"][i] = min(p["vector"][i], search_space[i][1])
 				p["vector"][i] = max(p["vector"][i], search_space[i][0])
 				
-		if __name__ == "__main__":
-			print(f" > iteration {gen+1}")
 
 	return [x["vector"] for x in pop]
 

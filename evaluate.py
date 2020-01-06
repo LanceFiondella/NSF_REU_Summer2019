@@ -425,7 +425,7 @@ if __name__ == "__main__":
 	pop = search(nsga_max_gens, nsga_pop_size, nsga_p_cross)
 	t = time.time() - t
 
-	print(f'done! {str(int(np.floor(t/3600))).zfill(2)}:{str(int(np.floor(t/60) % 60)).zfill(2)}:{str(int(np.floor(t) % 60)).zfill(2)}')
+	print("done!")#{str(int(np.floor(t/3600))).zfill(2)}:{str(int(np.floor(t/60) % 60)).zfill(2)}:{str(int(np.floor(t) % 60)).zfill(2)}')
 
 	# ----------- VISUALIZATION -------------------------------------------------------------------------
 

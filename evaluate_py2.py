@@ -214,8 +214,8 @@ def decode(bitstring, model = None):
 											# get indexes of each stage, by rounding
 											# stage_num / 2 +- stage_num / 2
 
-	pop_size = round(bin_signum(groups[3], model_pop_count[0], model_pop_count[1]))
-	gen_count = round(bin_signum(groups[4], model_generations[0], model_generations[1]))
+	pop_size = int(round(bin_signum(groups[3], model_pop_count[0], model_pop_count[1])))
+	gen_count = int(round(bin_signum(groups[4], model_generations[0], model_generations[1])))
 											# get bits corresponding to model gens and size
 											# and generate pop size / generations based on values
 

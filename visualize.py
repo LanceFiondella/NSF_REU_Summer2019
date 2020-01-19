@@ -61,10 +61,6 @@ with open(sys.argv[2]) as f:
 		for i in range(int(candidate_count)):
 			pops[-1].append( {'bitstring': linedata[i*3] , 'objectives': [float(linedata[i*3 + 1]), float(linedata[i*3 + 2])] } )
 
-for p in pops:
-	print(p)
-	print()
-	print()
 
 pop = pops[-1]
 
@@ -89,7 +85,7 @@ for p in pop:
 
 
 
-
+'''
 types = {}		# bar chart of none types
 for p in pop:
 	ptype, conv = decode(p['bitstring'])[1:][:2]
@@ -104,16 +100,16 @@ plt.bar(list(range(len(types))),
 		tick_label = [str(x) for x in types.keys()])	
 plt.title('Subset of NONE types')
 plt.show()
+'''
 
-
-
+'''
 for idx, pop in enumerate(pops):	# plot runtime changes per generation
 	for p in pop:
 		plt.plot(idx+2, p['objectives'][0], 'r*')
 	plt.plot(idx+2, sum([x['objectives'][0] for x in pop])/nsga_pop_size, 'b')
 plt.title('All runtimes versus generation')
 plt.show()
-
+'''
 
 '''#								# plot best candidates of all runs
 names = [x[:-3] for x in os.listdir('algorithms') if x[-3:] == '.py']
@@ -149,7 +145,7 @@ plt.legend(loc='best')
 plt.show()
 '''
 
-
+'''
 				#PLOT TIME/EPSILON VS ITERATIONS
 ers = []
 tss = []
@@ -173,8 +169,8 @@ plt.plot(ers, 'b', label='epsilon')
 plt.title('Time & Error vs Iterations')
 plt.legend(loc='best')
 plt.show()
-
-
+'''
+'''
 				# plot pop pcts
 algs = []
 for gen, pop in enumerate(pops):
@@ -193,24 +189,43 @@ prog = {}
 for n in names:
 	prog[n] = [x[n] for x in algs]
 for n in names:
-	plt.plot([l/nsga_pop_size for l in prog[n]],colors[n],label=n)
+	plt.step([l/nsga_pop_size for l in prog[n]],colors[n],label=n)
 plt.title('Algorithm percentage of population vs Iterations')
 plt.legend(loc='best')
 plt.show()
-
+'''
 	
-				# plot pareto curve
-for p in pop:
-	plt.plot(p['objectives'][0], p['objectives'][1], 'b*')
+import matplotlib
+matplotlib.use('Agg')
+import imageio
+ims = []
+for i, pop in enumerate(pops):
 
-plt.ylim([0.99, 1.1])
-plt.xlim([0,0.025])
-plt.title('Error vs Runtime Pareto Front')
-plt.xlabel('Runtime (s)')
-plt.ylabel('1+epsilon error')
-plt.show()
+	fig, ax = plt.subplots()
+					# plot pareto curve
+	for p in pop:
+		ax.plot(p['objectives'][0], p['objectives'][1], 'b*')
 
+	#plt.ylim([0.99, 1.1])
+	#plt.xlim([0,0.025])
+	#ax.title('Error vs Runtime Pareto Front')
+	#ax.xlabel('Runtime (s)')
+	#ax.ylabel('1+epsilon error')
+	ax.set(xlabel='Runtime (s)', ylabel='1+epsilon error', title=f'Error vs Runtime Pareto Curve: {i+1}')
+	
+	ax.set_ylim(0, 8)
+	ax.set_xlim(0,0.04)
+	fig.canvas.draw()
+	img = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
+	img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
 
+	ims.append(img)
+	print(f'{i}  ',end="\r")
+
+kwargs_write = {'fps':16, 'quantizer':'nq'}
+imageio.mimsave('./powers.gif', ims, fps=16)
+
+'''
 front0 = []
 front1 = []
 for iteration, popu in enumerate(pops):
@@ -224,3 +239,4 @@ plt.plot(front1, 'r', label='error')
 plt.title('Frontrunner accuracy and runtime')
 plt.legend()
 plt.show()
+'''

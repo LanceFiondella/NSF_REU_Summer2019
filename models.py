@@ -33,14 +33,14 @@ def LLInitiaPDFZTP(x):
 	n = len(tVec)
 	tn = tVec[-1]
 
-	b, c, p, a1, b1 = x
+	b, a1, b1, c,p = x
 	Second = []
 	for i in range(n):
 		FIFirst = c*exp(b*tVec[i])*(1+a1)
 		FISecond = (-1+exp(b*tVec[i]))/(a1+exp(b*tVec[i]))
 		FIPower = -1+((c*(p-b1))/b)
 		FIDenom = (a1+exp(b*tVec[i]))**2
-		Second.append(math.log((FIFirst*(FISecond**FIPower))/FIDenom))
+		Second.append(log((FIFirst*(FISecond**FIPower))/FIDenom))
 	SecondTerm = sum(Second)
 
 def RLLZTP(x):
@@ -48,15 +48,13 @@ def RLLZTP(x):
 	n = len(tVec)
 	tn = tVec[-1]
 
-	b, c, p, a1, b1 = x
+	b, a1, b1, c, p = x
+	print(b, a1, b1, c, p)
 	#aMLE
 	firstT = (exp(-b*tn)*(1+a1))/(1+exp(-b*tn)*a1)
 	SecondTPower =  (-c*(p-b1))/b
 	ThirdT = (p-b1)
-	try:
-		aMLE = n *((1-firstT)**SecondTPower)*ThirdT
-	except OverflowError:
-		return float('inf')
+	aMLE = n *((1-firstT)**SecondTPower)*ThirdT
 
 	#MVF
 	mtFirst = aMLE/(p-b1)
@@ -73,11 +71,8 @@ def RLLZTP(x):
 		FIPower = -1+((c*(p-b1))/b)
 		FIDenom = (a1+exp(b*tVec[i]))**2
 		sum1 = (FIFirst*(FISecond**FIPower))/(FIDenom)
-		Second.append(math.log(sum1))
-
+		Second.append(log(sum1))
 	return -(-FirstTerm+sum(Second))
-
-#print(RLLZTP([.00000389584, -0.760231, -0.265915, 0.000010136, -0.0150238]))
 
 #--- Covariate model ------------------------------------------------------------+
 ########### Best solution  - -23.0067  ###########################################
@@ -301,6 +296,13 @@ models = {
 		"search_space":	[0.00000001,1-0.00000001],
 		"estimates":	[ [0.2, 0.2], [0.2, 0.2], [0.2, 0.2], [0.2, 0.2] ],
 		"result":		23.0067
+	},
+	"ZTP":{
+		"objective":	RLLZTP,
+		"dimensions":	5,
+		"search_space":	[-1, 1],
+		"estimates":	[ [0.05, 0.2], [0.05, 0.2], [0.05, 0.2], [0.05, 0.2], [0.05, 0.2] ],
+		"result":		966.102
 	},
 	"Sphere":{
 		"objective":	Sphere,

@@ -31,7 +31,12 @@ model_generations = [22, 16]	# generations used in method
 
 
 stage1 = [lambda x: x]*2
-stage2 = [	{	
+stage2 = [	
+			{
+				"algo": None,
+				"params":[]
+			}
+			{	
 				"algo":	firefly.search,
 				"params":[ [0.95, 0.05], [0.96, 0.04] ]
 			},
@@ -62,10 +67,6 @@ stage2 = [	{
 			{
 				"algo": wolf.search,
 				"params":[ [0.5, 0.1], [0.85, 0.15], [0.5, 0.1], [0.9, 0.075] ]
-			},
-			{
-				"algo": None,
-				"params":[]
 			}
 			]
 stage3 = [

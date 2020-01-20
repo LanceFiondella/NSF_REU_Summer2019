@@ -194,7 +194,23 @@ plt.title('Algorithm percentage of population vs Iterations')
 plt.legend(loc='best')
 plt.show()
 '''
+
+
+
+for p in pops[-1]:
+	r1, r2, r3, prop = decode(p['bitstring'])
+	n = r2.__module__ if r2 != None else "NONE"
+	c = colors[n]
+	plt.plot(p['objectives'][0], p['objectives'][1], 'o', color=c)
+
+plt.ylim([0.999, 1.01])
+#plt.xlim([0,0.025])
+plt.title('Error vs Runtime Pareto Front')
+plt.xlabel('Runtime (s)')
+plt.ylabel('1+epsilon error')
+plt.show()
 	
+'''	ANIMATE PARETO PLOT, DONT DO THIS
 import matplotlib
 matplotlib.use('Agg')
 import imageio
@@ -224,6 +240,8 @@ for i, pop in enumerate(pops):
 
 kwargs_write = {'fps':16, 'quantizer':'nq'}
 imageio.mimsave('./powers.gif', ims, fps=16)
+'''
+
 
 '''
 front0 = []

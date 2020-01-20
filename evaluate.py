@@ -17,11 +17,13 @@ import bat, bee, cuckoo, firefly, fish, pollination, pso, wolf
 
 #---- NSGA SETTINGS ------------------------------
 
+model = models.models[sys.argv[1]]
+
 nsga_max_gens = 128				# number of generations in NSGA-II
 nsga_pop_size = 128 			# how many combinations there are, must be even
 nsga_p_cross = 0.98				# mutation crossover probability
-nsga_fn_evals = 16				# how many evaluations to average
-nsga_bpp = 24 					# bits / precision to use for each parameter
+nsga_fn_evals = 32				# how many evaluations to take median of
+nsga_bpp = 32 					# bits / precision to use for each parameter
 nsga_cross_breed = False		# allow algorithms to change during the process
 nsga_free_range = False			# sets all parameter ranges to 0.5 +- 0.5 instead of predefined (needs more gens)
 nsga_cross_head_tail = True		# uses head/tail crossover instead of random bits
@@ -29,13 +31,15 @@ nsga_cross_head_tail = True		# uses head/tail crossover instead of random bits
 model_pop_count = [22, 16]		# pop size for method
 model_generations = [22, 16]	# generations used in method
 
-
-stage1 = [lambda x: x]*2
+stage1 = [
+			model['rand'],
+			model['estimates']
+		 ]
 stage2 = [	
 			{
 				"algo": None,
 				"params":[]
-			}
+			},
 			{	
 				"algo":	firefly.search,
 				"params":[ [0.95, 0.05], [0.96, 0.04] ]
@@ -102,7 +106,13 @@ def search(max_gens, pop_size, p_cross, result_block = None):
 
 	pop = [	{"bitstring":random_bitstring(total_bit_count)} 
 			for i in range(pop_size)]		# bitstring consists of algo bits, parameter bits, pop size bits, and gen count bits
-										
+	
+	for i, p in enumerate(pop):							# truncate extra bits in bitstring to ensure proper crossover
+		a1, a2, a3, prms = decode(p['bitstring'])
+		numparams = len(prms) - 4
+		needed_bits = (5 + numparams) * nsga_bpp
+		p['bitstring'] = p['bitstring'][:needed_bits]
+
 	print(" > begin initial objectives & sort")
 	calculate_measures(pop)					# prelim. results pt 1: get initial pop scoring
 	fast_nondominated_sort(pop)				# sort initial pop by domination
@@ -170,33 +180,35 @@ def calculate_measures(pop, gen=None, maxgen=None):
 		expanded = list(params) 			# convert it to a list to replace it
 
 		runtime, error = 0, 0
+		runtimes = []
+		errors = []
 
 
 		for i in range(nsga_fn_evals):		# get average of N runs
 
-
-			expanded[3] = [						# generate population, pseudorandom
-				[t[0] + t[1]*np.random.uniform(-1, 1) for t in model["estimates"]]
-				for x in range(pop_size)]
+			expanded[3] = alg_1(pop_size)# generate a population with size pop_size
 
 			
 			params = tuple(expanded) 		# convert back to tuple
 
 			stime = time.time()
 			lst =  alg_2(*params) if alg_2 != None else params[3]
-											# run swarm estimator if enabled, otherwise just take random values
+											# run swarm estimator if enabled, otherwise just take pop as is
 
 			candidate = min(lst, key = model['objective'])
 											# get most-fit particle, check if it converges
 
 			result, conv = alg_3(candidate)	# do newton's method or ECM on result for runtime
 											# don't care about the actual accuracy of that convergence
-			runtime += time.time() - stime
 
-			error += (model['objective'](result) / model['result'])
-			
-		p["objectives"] = [runtime/nsga_fn_evals, error/nsga_fn_evals]
-											# metrics: total runtime, and accuracy of swarm before convergence
+			runtimes.append(time.time() - stime)
+			errors.append((model['objective'](result) / model['result']))	# store runtimes and errors in order to take median
+		
+
+		runtimes.sort()
+		errors.sort()
+		p["objectives"] = [runtimes[int(nsga_fn_evals/2)], errors[int(nsga_fn_evals/2)]]
+											# take median runtime and errors
 	if verbose:
 		col = int(os.popen('stty size', 'r').read().split()[1])
 		print(' '*col, end='\r')
@@ -300,15 +312,17 @@ def point_mutation(bitstring, rate=None):
 	(flips bits at random) - will not change the
 	algorithm-choice bits if not enabled
 	'''
+	bitstring_sw = bitstring[nsga_bpp:2*nsga_bpp]
 	if rate == None:					# flip bits at random according to rate
 		rate = 1/len(bitstring)
 	child = ""
 	for i in range(len(bitstring)):
 		bit = bitstring[i]				# only change fn bits if crossbreed is enable
-		if nsga_cross_breed or not (nsga_bpp < i < 2*nsga_bpp):
-			child += str(1-int(bit)) if (np.random.random_sample()<rate) else bit
-		else:
-			child += bit
+		child += str(1-int(bit)) if (np.random.random_sample()<rate) else bit
+
+	if (not nsga_cross_breed):	# if swarm doesnt mutate
+		child = child[:nsga_bpp] + bitstring_sw + child[2*nsga_bpp:]
+
 	return child
 
 
@@ -416,10 +430,6 @@ def select_parents(fronts, pop_size):
 
 # ---------- DONE, RUN SEARCH ALGORITHM -------------------------------------------------------------
 if __name__ == "__main__":
-	if len(sys.argv) > 1 and sys.argv[1] in models.models:
-		model = models.models[sys.argv[1]]
-	else:
-		sys.exit()
 
 	verbose = "-v" in sys.argv
 	outfile = open(sys.argv[2] ,"w")
@@ -430,32 +440,4 @@ if __name__ == "__main__":
 
 	outfile.close()
 
-	print("done!")#{str(int(np.floor(t/3600))).zfill(2)}:{str(int(np.floor(t/60) % 60)).zfill(2)}:{str(int(np.floor(t) % 60)).zfill(2)}')
-
-	# ----------- VISUALIZATION -------------------------------------------------------------------------
-
-
-	'''
-					# WRITE OUTPUTS TO CSV
-	with open('output_populations.csv','w') as csvfile:
-		writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-		writer.writerow([f"NSGA GENS: {nsga_max_gens}",f"NSGA POP: {nsga_pop_size}",f"NSGA CROSSOVER: {nsga_p_cross}",f"NSGA AVG EVALS: {nsga_fn_evals}",f"NSGA CROSSBREED: {nsga_cross_breed}"])
-		writer.writerow([f"MODEL: {[x for x in models.models if models.models[x]==model][0]}", f"MODEL POP: {model_pop_count}", f"MODEL GENS: {model_generations}"])
-		writer.writerow([])
-		writer.writerow(["algorithm", "convergence mtd", "runtime", "AVG error", "BEST error", "best candidate's model parameters", "score of best"])
-		for p in pop:
-			r, r2, r3, params = decode(p["bitstring"])
-			pop_size = len(params[3])
-			rep = list(params)
-			rep[3] = [						# generate population, pseudorandom
-					[t[0] + t[1]*np.random.uniform(-1, 1) for t in model["estimates"]]
-					for x in range(pop_size)]
-
-			params = tuple(rep)
-
-			newl = r2(*params) if r2 != None else rep[3]
-			bst = min(newl, key = model['objective'])
-			rs, con = r3(bst)
-			sc = model['objective'](rs) / model['result']
-			writer.writerow([r2.__module__ if r2 != None else 'NONE', r3.__name__, p["objectives"][0],p["objectives"][1], sc, rs, model["objective"](rs)])
-	'''
+	print("done!")

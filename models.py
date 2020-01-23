@@ -100,6 +100,14 @@ def Rastrigin(vec):
 	n = len(vec)
 	return A*n + np.sum([x**2 - A*np.cos(2*np.pi*x) for x in vec]) + 1
 
+def Rastrigin8Rand(pop_size):
+	out_pop = []
+	for i in range(pop_size):
+		out_pop.append([np.random.uniform(-5.12, 5.12) for i in range(8)])
+		
+	return out_pop
+
+
 def Ackley(vec):
 	rsq = np.sum(np.square(vector))
 	cos_sum = np.sum([2*np.pi*x for x in vec])
@@ -229,18 +237,13 @@ models = {
 		"estimates":	[[ 0, 1] for i in range(2)],
 		"result":		1
 	},
-	"Rastrigin2":{
+
+	"Rastrigin8":{
 			"objective":    Rastrigin,
-			"dimensions":   2,
-			"search_space": [-5,5],
-			"estimates":    [[ 0, 5] for i in range(2)],
-			"result":               1# added 1 to eval to calculate error
-	},
-	"Rastrigin10":{
-			"objective":    Rastrigin,
-			"dimensions":   10,
-			"search_space": [-5,5],
-			"estimates":    [[ 0, 5] for i in range(10)],
+			"dimensions":   8,
+			"search_space": [-5.12,5.12],
+			"rand":			Rastrigin8Rand,
+			"estimates":    Rastrigin8Rand,
 			"result":               1# added 1 to eval to calculate error
 	}
 

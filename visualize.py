@@ -170,7 +170,7 @@ plt.title('Time & Error vs Iterations')
 plt.legend(loc='best')
 plt.show()
 '''
-'''
+
 				# plot pop pcts
 algs = []
 for gen, pop in enumerate(pops):
@@ -193,7 +193,7 @@ for n in names:
 plt.title('Algorithm percentage of population vs Iterations')
 plt.legend(loc='best')
 plt.show()
-'''
+
 
 
 

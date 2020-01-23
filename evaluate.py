@@ -86,6 +86,9 @@ stage3 = [
 			#models.trustncg
 		]
 
+if sys.argv[1] == "Weibull":
+	stage3.append(models.NM)
+
 #---------------begin NSGA-II---------------------
 
 

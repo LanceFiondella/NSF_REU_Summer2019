@@ -158,7 +158,7 @@ def NM(estimates):
 	'''
 	bMLEinit, cMLEinit = estimates
 	try:
-		result = scipy.optimize.newton(calcMLEs,x0=(bMLEinit,cMLEinit), fprime=calcMLEsSecondorder, tol=1e-10, maxiter=10000, full_output=True)
+		result = scipy.optimize.newton(calcMLEs,x0=(bMLEinit,cMLEinit), fprime=calcMLEsSecondorder, tol=1e-10, maxiter=10000)
 		#print(time.time() - ts)
 		return result.root, all(result.converged)
 	except RuntimeError:	#scipy throws an error if it fails to converge - catch and shortcircuit

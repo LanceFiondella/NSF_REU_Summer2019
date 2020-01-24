@@ -64,7 +64,7 @@ with open(sys.argv[2]) as f:
 
 pop = pops[-1]
 
-pop.sort(key = lambda x: (x["objectives"][1], x["objectives"][0]))	# sort by conv then time
+pop.sort(key = lambda x: (x["objectives"][0], x["objectives"][1]))	# sort by conv then time
 
 sep = "\t"
 
@@ -78,7 +78,7 @@ for p in pop:
 	print(f"{n[:6] if r2 != None else 'NONE'}{sep}{r3.__name__[:6] }{sep}{params[2] if r2 != None else 'n/a'}{sep}{len(params[3])if r2 != None else 'n/a'}", end=sep)
 
 	if r2 != None:
-		for i in params[5:]:
+		for i in params[4:]:
 			print(round(i,3), end=sep)
 	print("\\\\" if sep != "\t" else "")
 
@@ -185,29 +185,50 @@ for gen, pop in enumerate(pops):
 
 names = [x[:-3] for x in os.listdir('algorithms') if x[-3:] == '.py']
 names.append('NONE')
+used = []
 prog = {}
 for n in names:
 	prog[n] = [x[n] for x in algs]
 for n in names:
-	plt.step([l/nsga_pop_size for l in prog[n]],colors[n],label=n)
-plt.title('Algorithm percentage of population vs Iterations')
+	t = n
+	if not(t == 'bee' or t == 'NONE'):
+		t = 'Other'
+	plt.step([l/nsga_pop_size for l in prog[n]],'#000000',label=t.lower() if t not in used else None, ls='-' if n=='NONE' else ':' if n=='bee' else '--')
+	used.append(t)
+
+
+plt.title('Algorithm Population Share Ratio')
 plt.legend(loc='best')
+plt.xticks([0] + [x-1 for x in range(16,129,16)], ['1'] + [str(x) for x in range(16,129,16)])
+plt.ylabel('Algorithm Share Percentage')
+plt.xlabel('Generation')
 plt.show()
 
 
 
-
+names = []
 for p in pops[-1]:
 	r1, r2, r3, prop = decode(p['bitstring'])
 	n = r2.__module__ if r2 != None else "NONE"
-	c = colors[n]
-	plt.plot(p['objectives'][0], p['objectives'][1], 'o', color=c)
 
-plt.ylim([0.999, 1.01])
+
+	c = 'k'
+	if n == 'NONE':
+		c = '.'
+	if n == 'bee':
+		c = 'x'
+	if str(round(p['objectives'][1],12)) == '1.000325607232':
+		c = '+'
+	plt.plot(p['objectives'][0], p['objectives'][1], marker=c, color='k', label=None if n in names else n.lower())
+	if n not in names:
+		names.append(n)
+
+#plt.ylim([0.999, 1.01])
 #plt.xlim([0,0.025])
-plt.title('Error vs Runtime Pareto Front')
+plt.title('Error & Runtime Pareto Plot')
 plt.xlabel('Runtime (s)')
 plt.ylabel('1+epsilon error')
+plt.legend(loc='best')
 plt.show()
 	
 '''	ANIMATE PARETO PLOT, DONT DO THIS

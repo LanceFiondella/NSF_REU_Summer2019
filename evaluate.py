@@ -15,6 +15,12 @@ import sys, os, models
 sys.path.insert(0, "algorithms")
 import bat, bee, cuckoo, firefly, fish, pollination, pso, wolf
 
+predef = [
+	"10010111000101111000101010110101101001001010010110100101100001111011101010011000101011100011111000000000011000011010000011001000000000001100001000011001111101100010010000010100001011110001111111010011011010100000110100011101101101101100100111110101101011011111100111110010100010010110100001110100110101111100001001010000",
+	"1000011111110011011000100000111100000110110110001011000110001110011001000101101111010010011010100000001000111000010110110010111010000110101001100010101010111010",
+	"1100011011011011011110100000111100000110110110001011000110001110011001000101100111110010011110100000011000111011110010110011110110000100101001100100101000111010"
+]
+
 #---- NSGA SETTINGS ------------------------------
 
 model = models.models[sys.argv[1]]
@@ -96,7 +102,7 @@ import numpy as np
 import time
 
 
-def search(max_gens, pop_size, p_cross, result_block = None):
+def search(max_gens, pop_size, p_cross):
 	'''
 	Main routine - creates population of algorithms,
 	runs initial sorting and new population, iteratively
@@ -155,11 +161,17 @@ def search(max_gens, pop_size, p_cross, result_block = None):
 	union = pop + children
 	fronts = fast_nondominated_sort(union)
 	parents = select_parents(fronts, pop_size)
-	if result_block == None:
-		return parents
-	else:
-		result_block.put(parents)
-		return
+
+
+def evaluate_predef():
+	pop = [{"bitstring":x} for x in predef]
+	calculate_measures(pop)
+
+	for candidate in pop:	# candidate is tuple of bitstring, array of results
+		outfile.write( " ".join( [candidate['bitstring'], str(candidate['objectives'][0]), str(candidate['objectives'][1])] ) )
+		outfile.write(" ")
+	outfile.write("\n")
+
 
 
 def random_bitstring(num_bits):
@@ -170,7 +182,7 @@ def random_bitstring(num_bits):
 	return "".join([str(np.random.randint(2)) for i in range(num_bits)]).zfill(num_bits)
 
 
-def calculate_measures(pop, gen=None, maxgen=None):
+def calculate_measures(pop):
 	'''
 	Given a population member, decodes and evaluates the
 	time and accuracy of its algorithms 
@@ -435,11 +447,14 @@ def select_parents(fronts, pop_size):
 if __name__ == "__main__":
 
 	verbose = "-v" in sys.argv
-	outfile = open(sys.argv[2] ,"w")
+	outfile = open(sys.argv[2] ,"a+")
 
-	t = time.time()
-	pop = search(nsga_max_gens, nsga_pop_size, nsga_p_cross)
-	t = time.time() - t
+	if "-p" in sys.argv:
+		evaluate_predef()
+	else:
+		t = time.time()
+		pop = search(nsga_max_gens, nsga_pop_size, nsga_p_cross)
+		t = time.time() - t
 
 	outfile.close()
 

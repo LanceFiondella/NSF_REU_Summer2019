@@ -75,11 +75,13 @@ for p in pop:
 	c = colors[n]
 
 	print(sep.join([str(round(x,12)).ljust(12, ' ') for x in p["objectives"]]), end=sep)
-	print(f"{n[:6] if r2 != None else 'NONE'}{sep}{r3.__name__[:6] }{sep}{params[2] if r2 != None else 'n/a'}{sep}{len(params[3])if r2 != None else 'n/a'}", end=sep)
 
+	print(f"{n[:6] if r2 != None else 'NONE'}{sep}{r3.__name__[:6] }{sep}{params[2] if r2 != None else 'n/a'}{sep}{len(params[3])if r2 != None else 'n/a'}", end=sep)
 	if r2 != None:
 		for i in params[4:]:
 			print(round(i,3), end=sep)
+
+	print(p["bitstring"], end=sep)
 	print("\\\\" if sep != "\t" else "")
 
 

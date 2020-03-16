@@ -1,4 +1,8 @@
 import importlib, sys
+
+fname = sys.argv[1]
+sys.argv[1] = 'Weibull'	# to fix evalulate.py error
+
 from evaluate import *
 from matplotlib import pyplot as plt
 from numpy import inf
@@ -15,7 +19,9 @@ colors = {
 	'NONE':		'#00aa00'
 }
 
-def decode(bitstring, model = models.models[sys.argv[1]]):
+
+
+def decode(bitstring):
 	'''
 	Takes some bit-pattern (some member of the population),
 	gives back the corresponding algorithms (phase 1, 2, 3)
@@ -34,9 +40,9 @@ def decode(bitstring, model = models.models[sys.argv[1]]):
 											# get bits corresponding to model gens and size
 											# and generate pop size / generations based on values
 
-	model_search_space = [model["search_space"] for i in range(model["dimensions"])]
+	#model_search_space = [model["search_space"] for i in range(model["dimensions"])]
 
-	params = (model["objective"], model_search_space, gen_count, [0]*pop_size)
+	params = (lambda x:x , (), gen_count, [0]*pop_size)
 											# get parameters for swarm algorithms
 	param_bits = groups[5:]
 	for idx, prm in enumerate(stage2[index_2]["params"]):
@@ -53,13 +59,19 @@ def decode(bitstring, model = models.models[sys.argv[1]]):
 
 pops = []
 			# take pops from file and import to script
-with open(sys.argv[2]) as f:
+with open(fname) as f:
 	for gen_line in f:
 		pops.append([])
 		linedata = gen_line.split(" ")
 		candidate_count = len(linedata) / 3	#groups of 3
 		for i in range(int(candidate_count)):
 			pops[-1].append( {'bitstring': linedata[i*3] , 'objectives': [float(linedata[i*3 + 1]), float(linedata[i*3 + 2])] } )
+
+allpops = []
+for g in pops:
+	for p in g:
+		allpops.append(p)
+
 
 
 pop = pops[-1]
@@ -69,7 +81,7 @@ pop.sort(key = lambda x: (x["objectives"][0], x["objectives"][1]))	# sort by con
 sep = "\t"
 
 print('\033[4m' + sep.join(['runtime', 'avg conv', 'algo', 'conv method', 'gens', 'pop', 'algo params', 'init estimate score']) + "\\\\" + '\033[0m')
-for p in pop:
+for p in allpops:
 	r, r2, r3, params = decode(p["bitstring"])
 	n = r2.__module__ if r2 != None else "NONE"
 	c = colors[n]
@@ -81,7 +93,7 @@ for p in pop:
 		for i in params[4:]:
 			print(round(i,3), end=sep)
 
-	print(p["bitstring"], end=sep)
+	#print(p["bitstring"], end=sep)
 	print("\\\\" if sep != "\t" else "")
 
 
@@ -173,7 +185,7 @@ plt.legend(loc='best')
 plt.show()
 '''
 
-				# plot pop pcts
+'''				# plot pop pcts
 algs = []
 for gen, pop in enumerate(pops):
 	t = {'NONE':0}								# code to visualize population percentages of each algorithm
@@ -205,29 +217,29 @@ plt.xticks([0] + [x-1 for x in range(16,129,16)], ['1'] + [str(x) for x in range
 plt.ylabel('Algorithm Share Percentage')
 plt.xlabel('Generation')
 plt.show()
+'''
 
+buckets = []
+dsets = ['SYS1','SYS2','SYS3','S2',	'S27','SS3','CSR1','CSR2','CSR3']
+marks = ['.',	'^',	'1',  's',	'P',  '*',  'x',   'd',   '>']
+colors = ['r','b','k']
+for i in range(9):
+	p0 = allpops[i*3 +0]['objectives']
+	p1 = allpops[i*3 +1]['objectives']
+	p2 = allpops[i*3 +2]['objectives']
+	buckets.append(( (p0[0] + p1[0] + p2[0])/3, (p0[1] + p1[1] + p2[1])/3 ))
 
+#for i, p in enumerate(buckets):
+	#plt.plot(p[0], p[1], marker=marks[i], color='k', label=dsets[i])
+#for p in pops:
+for ind, p in enumerate(allpops):
+	set_ind = int(ind/3)
+	dset = dsets[set_ind]
+	plt.plot(p['objectives'][0], p['objectives'][1], marker=marks[set_ind], color=colors[ind%3], label=dsets[set_ind] if ind%3==0 else None)
 
-names = []
-for p in pops[-1]:
-	r1, r2, r3, prop = decode(p['bitstring'])
-	n = r2.__module__ if r2 != None else "NONE"
-
-
-	c = 'k'
-	if n == 'NONE':
-		c = '.'
-	if n == 'bee':
-		c = 'x'
-	if str(round(p['objectives'][1],12)) == '1.000325607232':
-		c = '+'
-	plt.plot(p['objectives'][0], p['objectives'][1], marker=c, color='k', label=None if n in names else n.lower())
-	if n not in names:
-		names.append(n)
-
-#plt.ylim([0.999, 1.01])
-#plt.xlim([0,0.025])
-plt.title('Error & Runtime Pareto Plot')
+#plt.ylim([0.9999, 1.00075])
+#plt.xlim([0,0.015])
+plt.title('Error & Runtime Pareto Plot (avg. 3 candidates) ')
 plt.xlabel('Runtime (s)')
 plt.ylabel('1+epsilon error')
 plt.legend(loc='best')

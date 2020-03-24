@@ -86,104 +86,21 @@ for p in allpops:
 	n = r2.__module__ if r2 != None else "NONE"
 	c = colors[n]
 
-	print(sep.join([str(round(x,12)).ljust(12, ' ') for x in p["objectives"]]), end=sep)
+	#print(sep.join([str(round(x,12)).ljust(12, ' ') for x in p["objectives"]]), end=sep)
 
-	print(f"{n[:6] if r2 != None else 'NONE'}{sep}{r3.__name__[:6] }{sep}{params[2] if r2 != None else 'n/a'}{sep}{len(params[3])if r2 != None else 'n/a'}", end=sep)
+	#print(f"{n[:6] if r2 != None else 'NONE'}{sep}{r3.__name__[:6] }{sep}{params[2] if r2 != None else 'n/a'}{sep}{len(params[3])if r2 != None else 'n/a'}", end=sep)
 	if r2 != None:
 		for i in params[4:]:
-			print(round(i,3), end=sep)
+			pass
+			#print(round(i,3), end=sep)
 
 	#print(p["bitstring"], end=sep)
-	print("\\\\" if sep != "\t" else "")
+	print(p['objectives'][0], p['objectives'][1])
+	#print("\\\\" if sep != "\t" else "")
 
 
 
 
-'''
-types = {}		# bar chart of none types
-for p in pop:
-	ptype, conv = decode(p['bitstring'])[1:][:2]
-	if ptype == None:
-		conv = conv.__name__
-		if conv in types:
-			types[conv] += 1
-		else:
-			types[conv] = 1
-plt.bar(list(range(len(types))),
-		[types[x] for x in types],
-		tick_label = [str(x) for x in types.keys()])	
-plt.title('Subset of NONE types')
-plt.show()
-'''
-
-'''
-for idx, pop in enumerate(pops):	# plot runtime changes per generation
-	for p in pop:
-		plt.plot(idx+2, p['objectives'][0], 'r*')
-	plt.plot(idx+2, sum([x['objectives'][0] for x in pop])/nsga_pop_size, 'b')
-plt.title('All runtimes versus generation')
-plt.show()
-'''
-
-'''#								# plot best candidates of all runs
-names = [x[:-3] for x in os.listdir('algorithms') if x[-3:] == '.py']
-names.append('NONE')
-prog = {}
-for n in names:
-	prog[n] = 0
-for p in frontrunners:
-	_, s2, _, _ = decode(p["bitstring"])
-	s2 = s2.__module__ if s2 != None else "NONE"
-	if s2 != None:
-		prog[s2] += 1
-	else:
-		prog['NONE'] += 1
-klist = list(prog.keys()).copy()
-for t in klist:
-	if prog[t] == 0:
-		del prog[t]
-keys = prog.keys()
-values = [prog[x] for x in keys]
-plt.bar(list(range(len(keys))), values, align='center', alpha = 0.5)
-plt.xticks(list(range(len(keys))), keys)
-plt.ylabel('Frontrunner algorithm type')
-plt.show()
-'''
-
-
-'''# 			PLOT SIZE AND GENERATIONS VS ITERATIONS
-plt.plot([sum([x[0] for x in l])/len(l) for l in pops] , 'b', label='pop size')
-plt.plot([sum([x[0] for x in l])/len(l) for l in gens], 'r', label='gen count')
-plt.title('Population Size & Swarm Generations vs Iterations (Average)')
-plt.legend(loc='best')
-plt.show()
-'''
-
-'''
-				#PLOT TIME/EPSILON VS ITERATIONS
-ers = []
-tss = []
-for iteration, pt in enumerate(pops):
-	er = 0
-	ts = 0
-	c = 1
-	for memb in pt:
-		plt.plot(iteration, memb['objectives'][0],'r*')
-		ts += memb['objectives'][0]
-		if (not np.isnan(memb['objectives'][1])) and (0 < memb['objectives'][1] < 3):
-			plt.plot(iteration, memb['objectives'][1]-1,'b*')
-			er += memb['objectives'][1]-1
-			c += 1
-	er /= c
-	ts /= len(pt)
-	ers.append(er)
-	tss.append(ts)
-plt.plot(tss, 'r',label='time')
-plt.plot(ers, 'b', label='epsilon')
-plt.title('Time & Error vs Iterations')
-plt.legend(loc='best')
-plt.show()
-'''
 
 '''				# plot pop pcts
 algs = []
@@ -212,84 +129,54 @@ for n in names:
 
 
 plt.title('Algorithm Population Share Ratio')
-plt.legend(loc='best')
-plt.xticks([0] + [x-1 for x in range(16,129,16)], ['1'] + [str(x) for x in range(16,129,16)])
-plt.ylabel('Algorithm Share Percentage')
+plt.legend(loc='best',
+#plt.xticks([0] + [x-1 for x in range(16,129,16)], ['1'] + [str(x) for x in range(16,129,16)])
+plt.ylabel('Percentage of Population')
 plt.xlabel('Generation')
 plt.show()
 '''
 
+
+plt.ticklabel_format(useOffset=False)
 buckets = []
 dsets = ['SYS1','SYS2','SYS3','S2',	'S27','SS3','CSR1','CSR2','CSR3']
 marks = ['.',	'^',	'1',  's',	'P',  '*',  'x',   'd',   '>']
-colors = ['r','b','k']
+
+colors = ['0','0.65','0.65']
+
 for i in range(9):
 	p0 = allpops[i*3 +0]['objectives']
 	p1 = allpops[i*3 +1]['objectives']
 	p2 = allpops[i*3 +2]['objectives']
 	buckets.append(( (p0[0] + p1[0] + p2[0])/3, (p0[1] + p1[1] + p2[1])/3 ))
 
-#for i, p in enumerate(buckets):
-	#plt.plot(p[0], p[1], marker=marks[i], color='k', label=dsets[i])
-#for p in pops:
-for ind, p in enumerate(allpops):
-	set_ind = int(ind/3)
-	dset = dsets[set_ind]
-	plt.plot(p['objectives'][0], p['objectives'][1], marker=marks[set_ind], color=colors[ind%3], label=dsets[set_ind] if ind%3==0 else None)
+if False:	# plot avg or all
 
-#plt.ylim([0.9999, 1.00075])
+	for i, p in enumerate(buckets):
+		if i == 0:
+			continue
+		plt.plot(p[0], p[1], marker=marks[i], color='k', label=dsets[i])
+
+else:
+	#for p in pops:
+	for ind, p in enumerate(allpops):
+		if ind == 0:
+			continue
+		set_ind = int(ind/3)
+		dset = dsets[set_ind]
+		color = colors[ind%3]
+		ecolor = None #if color == 'k' else 'k'
+		plt.scatter(p['objectives'][0], p['objectives'][1], marker=marks[set_ind], color=color, edgecolors=ecolor, label=dsets[set_ind] if ind%3==0 else None)
+		plt.ylim([1-0.000125, 1.002125])
+		
 #plt.xlim([0,0.015])
-plt.title('Error & Runtime Pareto Plot (avg. 3 candidates) ')
-plt.xlabel('Runtime (s)')
-plt.ylabel('1+epsilon error')
-plt.legend(loc='best')
+plt.xlabel('Runtime (s)',fontsize=12)
+plt.ylabel('Accuracy ($1+\epsilon$)',fontsize=12)
+
+plt.legend(loc='best',scatterpoints = 1)
 plt.show()
-	
-'''	ANIMATE PARETO PLOT, DONT DO THIS
-import matplotlib
-matplotlib.use('Agg')
-import imageio
-ims = []
-for i, pop in enumerate(pops):
-
-	fig, ax = plt.subplots()
-					# plot pareto curve
-	for p in pop:
-		ax.plot(p['objectives'][0], p['objectives'][1], 'b*')
-
-	#plt.ylim([0.99, 1.1])
-	#plt.xlim([0,0.025])
-	#ax.title('Error vs Runtime Pareto Front')
-	#ax.xlabel('Runtime (s)')
-	#ax.ylabel('1+epsilon error')
-	ax.set(xlabel='Runtime (s)', ylabel='1+epsilon error', title=f'Error vs Runtime Pareto Curve: {i+1}')
-	
-	ax.set_ylim(0, 8)
-	ax.set_xlim(0,0.04)
-	fig.canvas.draw()
-	img = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
-	img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-
-	ims.append(img)
-	print(f'{i}  ',end="\r")
-
-kwargs_write = {'fps':16, 'quantizer':'nq'}
-imageio.mimsave('./powers.gif', ims, fps=16)
-'''
 
 
-'''
-front0 = []
-front1 = []
-for iteration, popu in enumerate(pops):
-	front = min(popu, key=lambda x: x['objectives'][0]*x['objectives'][1])
-	front0.append(front['objectives'][0]*30)
-	front1.append(front['objectives'][1]-1)
 
-plt.plot(front0, 'b', label='runtime')
-plt.plot(front1, 'r', label='error')
 
-plt.title('Frontrunner accuracy and runtime')
-plt.legend()
-plt.show()
-'''
+

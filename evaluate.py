@@ -21,6 +21,20 @@ predef = [
 	"1100011011011011011110100000111100000110110110001011000110001110011001000101100111110010011110100000011000111011110010110011110110000100101001100100101000111010"
 ]
 
+
+
+
+# REMOVE TRY EXCEPT FROM CV---------------------
+
+
+
+
+
+
+
+
+
+
 #---- NSGA SETTINGS ------------------------------
 
 model = models.models[sys.argv[1]]
@@ -28,7 +42,7 @@ model = models.models[sys.argv[1]]
 nsga_max_gens = 128				# number of generations in NSGA-II
 nsga_pop_size = 128 			# how many combinations there are, must be even
 nsga_p_cross = 0.98				# mutation crossover probability
-nsga_fn_evals = 32				# how many evaluations to take median of
+nsga_fn_evals = 63				# how many evaluations to take median of (take n/2 + 1 entry)
 nsga_bpp = 32 					# bits / precision to use for each parameter
 nsga_cross_breed = False		# allow algorithms to change during the process
 nsga_free_range = False			# sets all parameter ranges to 0.5 +- 0.5 instead of predefined (needs more gens)
@@ -222,7 +236,7 @@ def calculate_measures(pop):
 
 		runtimes.sort()
 		errors.sort()
-		p["objectives"] = [runtimes[int(nsga_fn_evals/2)], errors[int(nsga_fn_evals/2)]]
+		p["objectives"] = [runtimes[int(nsga_fn_evals/2 + 1)], errors[int(nsga_fn_evals/2 + 1)]]
 											# take median runtime and errors
 	if verbose:
 		col = int(os.popen('stty size', 'r').read().split()[1])
@@ -459,3 +473,4 @@ if __name__ == "__main__":
 	outfile.close()
 
 	print("done!")
+	

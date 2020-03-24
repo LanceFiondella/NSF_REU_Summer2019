@@ -86,6 +86,9 @@ EVec = np.array([0.05, 1, 0.19, 0.41, 0.32, 0.61, 0.32, 1.83, 3.01, 1.79, 3.17,3
 FVec = np.array([1.3, 17.8, 5.0, 1.5, 1.5, 3.0, 3.0, 8, 30, 9, 25, 15, 15, 2])
 CVec = np.array([0.5, 2.8, 1, 0.5, 0.5, 1, 0.5, 2.5, 3.0, 3.0, 6, 4, 4, 1])
 
+cov_n = len(kVec)
+cov_alpha = 3
+
 #--- COST/OBJECTIVE FUNCTION ------------------------------------------------------------+
 def RLLCV(x):
 	n = len(kVec)	
@@ -125,7 +128,8 @@ def RLLCV(x):
 def CovRand(pop_size):
 	out_pop = []
 	for i in range(pop_size):
-		a = np.random.uniform(1, 10)
+		print(cov_n,)
+		a = np.random.uniform(cov_n, cov_n*cov_alpha*3)
 		b = np.random.uniform(0, 0.1)
 		c = np.random.uniform(0, 0.1)
 		d = np.random.uniform(0, 0.1)

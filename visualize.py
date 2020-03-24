@@ -160,10 +160,10 @@ if False:	# plot avg or all
 else:
 	#for p in pops:
 	for ind, p in enumerate(allpops):
-		if ind == 0:
-			continue
 		set_ind = int(ind/3)
 		dset = dsets[set_ind]
+		if dset == "SYS1" and False:	# option to skip sys1
+			continue
 		color = colors[ind%3]
 		ecolor = None #if color == 'k' else 'k'
 		plt.scatter(p['objectives'][0], p['objectives'][1], marker=marks[set_ind], color=color, edgecolors=ecolor, label=dsets[set_ind] if ind%3==0 else None)

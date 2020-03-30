@@ -95,7 +95,7 @@ for p in allpops:
 			#print(round(i,3), end=sep)
 
 	#print(p["bitstring"], end=sep)
-	print(p['objectives'][0], p['objectives'][1])
+	print(r,p['objectives'][0], p['objectives'][1])
 	#print("\\\\" if sep != "\t" else "")
 
 
@@ -163,6 +163,8 @@ else:
 		set_ind = int(ind/3)
 		dset = dsets[set_ind]
 		if dset == "SYS1" and False:	# option to skip sys1
+			continue
+		if ind%3 == 2 and True:		# option to skip 2nd bfgs
 			continue
 		color = colors[ind%3]
 		ecolor = None #if color == 'k' else 'k'

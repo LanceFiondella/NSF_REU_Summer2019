@@ -164,7 +164,7 @@ def search(max_gens, pop_size, p_cross):
 		pop = children.copy()
 		children = reproduce(selected, pop_size, p_cross)
 
-		calculate_measures(children, gen, max_gens)
+		calculate_measures(children)
 
 		for candidate in children:	# candidate is tuple of bitstring, array of results
 			outfile.write( " ".join( [candidate['bitstring'], str(candidate['objectives'][0]), str(candidate['objectives'][1])] ) )

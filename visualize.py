@@ -1,7 +1,7 @@
 import importlib, sys
 
 fname = sys.argv[1]
-sys.argv[1] = 'Weibull'	# to fix evalulate.py error
+sys.argv[1] = sys.argv[2]	# to fix evalulate.py error
 
 from evaluate import *
 from matplotlib import pyplot as plt
@@ -95,7 +95,7 @@ for p in allpops:
 			#print(round(i,3), end=sep)
 
 	#print(p["bitstring"], end=sep)
-	print(r,p['objectives'][0], p['objectives'][1])
+	#print(r,p['objectives'][0], p['objectives'][1])
 	#print("\\\\" if sep != "\t" else "")
 
 
@@ -136,47 +136,64 @@ plt.xlabel('Generation')
 plt.show()
 '''
 
+if True:	# print all candidates
+	plt.ticklabel_format(useOffset=False)
+	for p in pops[-1]:
+		a,b,c,d = decode(p['bitstring'])
+		p = p['objectives']
+		#print(b.__module__ if b != None else 'none')
+		print(a)
+		plt.scatter(p[0], p[1], color='k' if b != None else 'b',marker='.')
 
-plt.ticklabel_format(useOffset=False)
-buckets = []
-dsets = ['SYS1','SYS2','SYS3','S2',	'S27','SS3','CSR1','CSR2','CSR3']
-marks = ['.',	'^',	'1',  's',	'P',  '*',  'x',   'd',   '>']
-
-colors = ['0','0.65','0.65']
-
-for i in range(9):
-	p0 = allpops[i*3 +0]['objectives']
-	p1 = allpops[i*3 +1]['objectives']
-	p2 = allpops[i*3 +2]['objectives']
-	buckets.append(( (p0[0] + p1[0] + p2[0])/3, (p0[1] + p1[1] + p2[1])/3 ))
-
-if False:	# plot avg or all
-
-	for i, p in enumerate(buckets):
-		if i == 0:
-			continue
-		plt.plot(p[0], p[1], marker=marks[i], color='k', label=dsets[i])
+	plt.xlim([0.01,0.05])
+	plt.ylim([1-0.025, 1.425])
+	plt.xlabel('Runtime (s)',fontsize=12)
+	plt.ylabel('Accuracy ($1+\epsilon$)',fontsize=12)
+	plt.show()
 
 else:
-	#for p in pops:
-	for ind, p in enumerate(allpops):
-		set_ind = int(ind/3)
-		dset = dsets[set_ind]
-		if dset == "SYS1" and False:	# option to skip sys1
-			continue
-		if ind%3 == 2 and True:		# option to skip 2nd bfgs
-			continue
-		color = colors[ind%3]
-		ecolor = None #if color == 'k' else 'k'
-		plt.scatter(p['objectives'][0], p['objectives'][1], marker=marks[set_ind], color=color, edgecolors=ecolor, label=dsets[set_ind] if ind%3==0 else None)
-		plt.ylim([1-0.000125, 1.002125])
-		
-#plt.xlim([0,0.015])
-plt.xlabel('Runtime (s)',fontsize=12)
-plt.ylabel('Accuracy ($1+\epsilon$)',fontsize=12)
+	#print weibull data
+	plt.ticklabel_format(useOffset=False)
+	buckets = []
+	dsets = ['SYS1','SYS2','SYS3','S2',	'S27','SS3','CSR1','CSR2','CSR3']
+	marks = ['.',	'^',	'1',  's',	'P',  '*',  'x',   'd',   '>']
 
-plt.legend(loc='best',scatterpoints = 1)
-plt.show()
+	colors = ['0','0.65','0.65']
+
+	for i in range(9):
+		p0 = allpops[i*3 +0]['objectives']
+		p1 = allpops[i*3 +1]['objectives']
+		p2 = allpops[i*3 +2]['objectives']
+		buckets.append(( (p0[0] + p1[0] + p2[0])/3, (p0[1] + p1[1] + p2[1])/3 ))
+
+	if False:	# plot avg or all
+
+		for i, p in enumerate(buckets):
+			if i == 0:
+				continue
+			plt.plot(p[0], p[1], marker=marks[i], color='k', label=dsets[i])
+
+	else:
+		#for p in pops:
+		for ind, p in enumerate(allpops):
+			set_ind = int(ind/3)
+			dset = dsets[set_ind]
+			if dset == "SYS1" and False:	# option to skip sys1
+				continue
+			if ind%3 == 2 and True:		# option to skip 2nd bfgs
+				continue
+			#print(f"{dset} {'bee' if ind%3 == 0 else 'bfgs'} {p['objectives'][0]} {p['objectives'][1]}")
+			color = colors[ind%3]
+			ecolor = None #if color == 'k' else 'k'
+			plt.scatter(p['objectives'][0], p['objectives'][1], marker=marks[set_ind], color=color, edgecolors=ecolor, label=dsets[set_ind] if ind%3==0 else None)
+			plt.ylim([1-0.000125, 1.002125])
+			
+	#plt.xlim([0,0.015])
+	plt.xlabel('Runtime (s)',fontsize=12)
+	plt.ylabel('Accuracy ($1+\epsilon$)',fontsize=12)
+
+	plt.legend(loc='best',scatterpoints = 1)
+	plt.show()
 
 
 

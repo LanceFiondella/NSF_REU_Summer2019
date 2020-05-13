@@ -81,18 +81,18 @@ pop.sort(key = lambda x: (x["objectives"][0], x["objectives"][1]))	# sort by con
 sep = "\t"
 
 print('\033[4m' + sep.join(['runtime', 'avg conv', 'algo', 'conv method', 'gens', 'pop', 'algo params', 'init estimate score']) + "\\\\" + '\033[0m')
-for p in allpops:
+for p in pop:
 	r, r2, r3, params = decode(p["bitstring"])
 	n = r2.__module__ if r2 != None else "NONE"
 	c = colors[n]
 
-	#print(sep.join([str(round(x,12)).ljust(12, ' ') for x in p["objectives"]]), end=sep)
+	print(sep.join([str(round(x,12)).ljust(12, ' ') for x in p["objectives"]]), end=sep)
 
-	#print(f"{n[:6] if r2 != None else 'NONE'}{sep}{r3.__name__[:6] }{sep}{params[2] if r2 != None else 'n/a'}{sep}{len(params[3])if r2 != None else 'n/a'}", end=sep)
+	print(f"{n[:6] if r2 != None else 'NONE'}{sep}{r3.__name__[:6] }{sep}{params[2] if r2 != None else 'n/a'}{sep}{len(params[3])if r2 != None else 'n/a'}", end=sep)
 	if r2 != None:
 		for i in params[4:]:
-			pass
-			#print(round(i,3), end=sep)
+			print(round(i,3), end=sep)
+	print()
 
 	#print(p["bitstring"], end=sep)
 	#print(r,p['objectives'][0], p['objectives'][1])
@@ -141,12 +141,12 @@ if True:	# print all candidates
 	for p in pops[-1]:
 		a,b,c,d = decode(p['bitstring'])
 		p = p['objectives']
-		#print(b.__module__ if b != None else 'none')
-		print(a)
+		#print(a)
+		#if b == None:
 		plt.scatter(p[0], p[1], color='k' if b != None else 'b',marker='.')
 
-	plt.xlim([0.01,0.05])
-	plt.ylim([1-0.025, 1.425])
+	plt.xlim([0 ,0.225])
+	plt.ylim([1-0.025, 3.75])
 	plt.xlabel('Runtime (s)',fontsize=12)
 	plt.ylabel('Accuracy ($1+\epsilon$)',fontsize=12)
 	plt.show()

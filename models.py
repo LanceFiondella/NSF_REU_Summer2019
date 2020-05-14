@@ -131,7 +131,6 @@ def RLLCV(x):
 def CovRand(pop_size):
 	out_pop = []
 	for i in range(pop_size):
-		#print(cov_n,)	# ask vidhya for final A value
 		a = np.random.uniform(0.8, 0.99)	# geometric distribution variable, 0.8 - 0.99
 		b = np.random.uniform(0, 0.1)
 		c = np.random.uniform(0, 0.1)

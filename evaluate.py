@@ -198,6 +198,8 @@ def calculate_measures(pop):
 		runtimes = []
 		errors = []
 
+		print(p['bitstring'])
+
 		for i in range(nsga_fn_evals):		# get average of N runs
 
 			expanded[3] = alg_1(pop_size)# generate a population with size pop_size

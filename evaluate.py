@@ -4,13 +4,13 @@ import sys, os, models
 sys.path.insert(0, "algorithms")
 import bat, bee, cuckoo, firefly, fish, pollination, pso, wolf
 
-predef = [	# 3 CANDIDATES WEIBULL
+predef = [	# 3 pre-defined candidates for weibull
 	"10010111000101111000101010110101101001001010010110100101100001111011101010011000101011100011111000000000011000011010000011001000000000001100001000011001111101100010010000010100001011110001111111010011011010100000110100011101101101101100100111110101101011011111100111110010100010010110100001110100110101111100001001010000",
 	"1000011111110011011000100000111100000110110110001011000110001110011001000101101111010010011010100000001000111000010110110010111010000110101001100010101010111010",
 	"1100011011011011011110100000111100000110110110001011000110001110011001000101100111110010011110100000011000111011110010110011110110000100101001100100101000111010"
 ]
 
-predef = [	# 3 CANDIDATES COVARIATE
+predef = [	# 2 (really 3) pre-defined covariate candidates, comment out section if using weibull
 
 	#"111111100101000101110110001110101000010001100010110010001001010010111010111011100010101000110101000000110101100100011000000110010000001001010110011111111001110100011011110111001111110001110011100101100000100000001011111110000000100000111110111110110111010110010100001001111110111000011011",
 	#"111111100101000101110110001110101000010001100010110010001001010010111010001011011010100000010111000000010010110000000000100110110100001001010010111111111001010000011011110111001110110011010011100111000100110000011010111001000000100000011111010111110110010110010100001001111110111000010001",
@@ -23,7 +23,7 @@ predef = [	# 3 CANDIDATES COVARIATE
 
 #---- NSGA SETTINGS ------------------------------
 
-model = models.models[sys.argv[1]]
+model = models.models[sys.argv[1]]	# pick model from model file using given name
 
 nsga_max_gens = 128				# number of generations in NSGA-II
 nsga_pop_size = 128 			# how many combinations there are, must be even
@@ -38,16 +38,16 @@ model_pop_count = [22, 16]		# pop size for method
 model_generations = [22, 16]	# generations used in method
 
 stage1 = [
-			model['rand'],
-			model['estimates']
+			model['rand'],		# two initial values, being either random in search space
+			model['estimates']	# or EM-based initial estimates
 		 ]
 stage2 = [	
 			{
-				"algo": None,
+				"algo": None,	# numeric only
 				"params":[]
 			},
 			{	
-				"algo":	firefly.search,
+				"algo":	firefly.search,	# list swarm types as well as ranges for input params
 				"params":[ [0.95, 0.05], [0.96, 0.04] ]
 			},
 			{						# contains all constant parameters in terms of 
@@ -80,7 +80,7 @@ stage2 = [
 			}
 			]
 stage3 = [
-			models.nelder_mead, 
+			models.nelder_mead, # numeric methods to finalize optimizations
 			models.powell, 
 			models.cg,
 			models.bfgs, 
@@ -92,7 +92,7 @@ stage3 = [
 			#models.trustncg
 		]
 
-if sys.argv[1] == "Weibull":
+if sys.argv[1] == "Weibull":	# newtons method not applicable to covariate
 	stage3.append(models.NM)
 
 #---------------begin NSGA-II---------------------
@@ -111,9 +111,9 @@ def search(max_gens, pop_size, p_cross):
 	param_count = len(max(stage2, key = lambda x: len(x["params"]))["params"])
 
 	total_bit_count = nsga_bpp * (param_count + 5)
-											# get total number of bits for bitstring
+											# get total number of bits for individual chromosome
 
-	pop = [	{"bitstring":random_bitstring(total_bit_count)} 
+	pop = [	{"bitstring":random_bitstring(total_bit_count)} 	# generate initial random population
 			for i in range(pop_size)]		# bitstring consists of algo bits, parameter bits, pop size bits, and gen count bits
 	
 	for i, p in enumerate(pop):							# truncate extra bits in bitstring to ensure proper crossover
@@ -156,16 +156,16 @@ def search(max_gens, pop_size, p_cross):
 			outfile.write( " ".join( [candidate['bitstring'], str(candidate['objectives'][0]), str(candidate['objectives'][1])] ) )
 			outfile.write(" ")
 		outfile.write("\n")
-											# take a snapshot of bitstrings and objective values
+											# take a snapshot of bitstrings and objective values for plotting
 
 	union = pop + children
 	fronts = fast_nondominated_sort(union)
-	parents = select_parents(fronts, pop_size)
+	parents = select_parents(fronts, pop_size)	# finalize population
 
 
 def evaluate_predef():
 	pop = [{"bitstring":x} for x in predef]
-	calculate_measures(pop)
+	calculate_measures(pop)		# evaluate chromosome rather than letting nsga tune it
 
 	for candidate in pop:	# candidate is tuple of bitstring, array of results
 		outfile.write( " ".join( [candidate['bitstring'], str(candidate['objectives'][0]), str(candidate['objectives'][1])] ) )
@@ -207,14 +207,14 @@ def calculate_measures(pop):
 			
 			params = tuple(expanded) 		# convert back to tuple
 
-			stime = time.time()
+			stime = time.time()				# stopwatch swarm alg
 			lst =  alg_2(*params) if alg_2 != None else params[3]
 											# run swarm estimator if enabled, otherwise just take pop as is
 
 			candidate = min(lst, key = model['objective'])
 											# get most-fit particle, check if it converges
 
-			result, conv = alg_3(candidate)	# do newton's method or ECM on result for runtime
+			result, conv = alg_3(candidate)	# do newton's method or ECM, etc on result for runtime
 											# don't care about the actual accuracy of that convergence
 
 			runtimes.append(time.time() - stime)
@@ -314,7 +314,7 @@ def fast_nondominated_sort(pop):
 			fronts.append(next_front)
 		if not (curr < len(fronts)):
 			break
-	return fronts
+	return fronts	# send back groups of algorithms of different tiers
 
 
 def dominates(p1, p2):

@@ -4,3 +4,9 @@ To run the model selection script, change the parameters within the script and u
 `python evaluate.py [ModelName] [output_filename]`
 
 Run without arguments to see which models are available.
+
+
+
+
+
+This work was supported by National Science Foundation Award (#1749635).

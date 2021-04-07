@@ -140,6 +140,54 @@ def CovRand(pop_size):
 		
 	return out_pop
 
+
+
+#--- GO IMPERFECT DEBUGGING-----------------------------------------------------------------
+
+def RLL_GOID(x):	# note: made return negative of original, to swap minimization/maximization problem
+	n = len(data)
+	b, beta = x
+	tn = data[-1]
+	sum_result = 0
+	for i in range(0, n):
+		sum_result += log( ( n * b * (1-beta) * exp(-b * (1-beta) * data[i]) )  /  (1- exp(-b * (1-beta) * tn)) )
+
+	return n - sum_result # normally -n + sum_result, flipped for maximization
+
+
+
+#---- GO_GO ----------------------------------------------------
+
+def GO_GO_LL(x):		# note: made return negative of original, to swap minimization/maximization problem
+	b1, b2, tau = x
+	n = len(data)
+	t_tau = data[tau-1]
+	tn = data[n-1]
+	a = n / (1- exp(-b2 * (tn - t_tau) - b1 * t_tau))
+	result = -a * exp(-b1 * t_tau) * (1-exp(-b2 * (tn-t_tau))) - a*(1-exp(-b1 * t_tau))
+	for i in range(0, tau):
+		result += log(a * b1 * exp(-b1 * data[i]))
+	for j in range(tau, n):
+		result += log(a * b2 * exp(-b2 * (data[j] - t_tau  ) - b1 * t_tau )  )
+	return -result
+
+
+
+# --------- GO_GO with ID --------------------------------------
+
+def GO_GO_ID_LL(x):		# note: made return negative of original, to swap minimization/maximization problem
+	a, b1, b2, beta1, beta2, tau = x
+	n = len(data)
+    total = 0
+    for i in range(0,tau):
+        total += log(-a * b1 * exp( b1 * data[i] * (beta1 - 1) ) * (beta1 - 1) / (1- beta1))
+    for j in range(tau, n):
+        total += log(-(( a * b2 * exp(b2 * data[j] * (beta2 - 1)) * (1- ( 1-exp(b1 * data[tau - 1] * ( beta1-1)) )/(1-beta1)) * (beta2 - 1) ) / ((1- (1- exp(b2 * data[tau - 1] * (beta2 - 1)) ) / (1- beta2)  ) * (1- beta2)  ) ))
+    total += -(a * (1-exp(b1 * data[tau-1] * (beta1 - 1))) / (1- beta1))
+    total += -(a * ( 1 - (1 - exp(b1 * data[tau-1] * (beta1 - 1)))/ (1-beta1) ) * ( (1 - exp(b2 * data[n-1] *(beta2 - 1)))/ (1-beta2) - (1 - exp(b2 * data[tau-1] *(beta2 - 1)))/ (1-beta2)) / ( 1 -( (1-exp(b2 * data[tau-1] * (beta2 - 1)))) / (1-beta2) ) )
+    return -total
+
+
 #--- multivariable optimization
 
 def Sphere(vector):
@@ -253,6 +301,30 @@ models = {
 		"estimates":	RLLWeiEst,#[ [0.1, 0.1],[0.9, 0.1] ],
 		"result":		data_res
 	},
+	"GO_ID":{
+		"objective":	RLL_GOID, # a=140.7138030566, b = 0.00003473055109079989, beta = 0.015167254110885663
+		"dimensions":	2,
+		"search_space":	[0, 1],
+		"rand":			RLLWeiRand,
+		"estimates":	RLLWeiEst,#[ [0.1, 0.1],[0.9, 0.1] ],
+		"result":		974.8065331549199
+	},
+	"GO_GO":{
+		"objective":	GO_GO_LL,	#a = 146.1217168, b1 = 0.00011010453, b2 = 0.00002914073757, tau = 16
+		"dimensions":	3,
+		"search_space":	[0, 1],
+		"rand":			RLLWeiRand,
+		"estimates":	RLLWeiEst,#[ [0.1, 0.1],[0.9, 0.1] ],
+		"result":		data_res
+	},
+	"GO_GO_ID":{
+		"objective":	GO_GO_ID_LL,	#a = 202.85885054901522, b1=0.00003784695148108467, b2=0.000022610059144784873, beta1 = -1.0292698160980898, beta2 = -0.34553812305625126, tau = 94
+		"dimensions":	6,
+		"search_space":	[0, 1],
+		"rand":			RLLWeiRand,
+		"estimates":	RLLWeiEst,#[ [0.1, 0.1],[0.9, 0.1] ],
+		"result":		966.0983649040921
+	},
 	"Covariate":{
 		"objective":	RLLCV,
 		"dimensions":	4,
@@ -282,3 +354,10 @@ models = {
 
 if crossval == True:
 	models['Covariate']['result'] = 28.404
+
+
+if __name__ == "__main__":
+	b = 0 # fix
+	beta = 0 # fix
+	print(RLL_GOID([b, beta]))
+	# need to run script with "-s sys1"

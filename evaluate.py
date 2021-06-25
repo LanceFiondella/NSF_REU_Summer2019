@@ -198,7 +198,7 @@ def calculate_measures(pop):
 		runtimes = []
 		errors = []
 
-		print(p['bitstring'])
+		#print(p['bitstring'])
 
 		for i in range(nsga_fn_evals):		# get average of N runs
 

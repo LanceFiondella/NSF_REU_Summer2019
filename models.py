@@ -178,14 +178,14 @@ def GO_GO_LL(x):		# note: made return negative of original, to swap minimization
 def GO_GO_ID_LL(x):		# note: made return negative of original, to swap minimization/maximization problem
 	a, b1, b2, beta1, beta2, tau = x
 	n = len(data)
-    total = 0
-    for i in range(0,tau):
-        total += log(-a * b1 * exp( b1 * data[i] * (beta1 - 1) ) * (beta1 - 1) / (1- beta1))
-    for j in range(tau, n):
-        total += log(-(( a * b2 * exp(b2 * data[j] * (beta2 - 1)) * (1- ( 1-exp(b1 * data[tau - 1] * ( beta1-1)) )/(1-beta1)) * (beta2 - 1) ) / ((1- (1- exp(b2 * data[tau - 1] * (beta2 - 1)) ) / (1- beta2)  ) * (1- beta2)  ) ))
-    total += -(a * (1-exp(b1 * data[tau-1] * (beta1 - 1))) / (1- beta1))
-    total += -(a * ( 1 - (1 - exp(b1 * data[tau-1] * (beta1 - 1)))/ (1-beta1) ) * ( (1 - exp(b2 * data[n-1] *(beta2 - 1)))/ (1-beta2) - (1 - exp(b2 * data[tau-1] *(beta2 - 1)))/ (1-beta2)) / ( 1 -( (1-exp(b2 * data[tau-1] * (beta2 - 1)))) / (1-beta2) ) )
-    return -total
+	total = 0
+	for i in range(0,tau):
+		total += log(-a * b1 * exp( b1 * data[i] * (beta1 - 1) ) * (beta1 - 1) / (1- beta1))
+	for j in range(tau, n):
+		total += log(-(( a * b2 * exp(b2 * data[j] * (beta2 - 1)) * (1- ( 1-exp(b1 * data[tau - 1] * ( beta1-1)) )/(1-beta1)) * (beta2 - 1) ) / ((1- (1- exp(b2 * data[tau - 1] * (beta2 - 1)) ) / (1- beta2)  ) * (1- beta2)  ) ))
+	total += -(a * (1-exp(b1 * data[tau-1] * (beta1 - 1))) / (1- beta1))
+	total += -(a * ( 1 - (1 - exp(b1 * data[tau-1] * (beta1 - 1)))/ (1-beta1) ) * ( (1 - exp(b2 * data[n-1] *(beta2 - 1)))/ (1-beta2) - (1 - exp(b2 * data[tau-1] *(beta2 - 1)))/ (1-beta2)) / ( 1 -( (1-exp(b2 * data[tau-1] * (beta2 - 1)))) / (1-beta2) ) )
+	return -total
 
 
 #--- multivariable optimization
@@ -236,7 +236,7 @@ def NM(estimates):
 	'''
 	bMLEinit, cMLEinit = estimates
 	try:
-		result = scipy.optimize.newton(calcMLEs,x0=(bMLEinit,cMLEinit), fprime=calcMLEsSecondorder, tol=1e-10, maxiter=10000)
+		result = scipy.optimize.newton(calcMLEs,x0=(bMLEinit,cMLEinit), fprime=calcMLEsSecondorder, tol=1e-10, maxiter=10000, full_output=True)
 		#print(time.time() - ts)
 		return result.root, all(result.converged)
 	except RuntimeError:	#scipy throws an error if it fails to converge - catch and shortcircuit
